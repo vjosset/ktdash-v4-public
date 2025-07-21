@@ -10,8 +10,8 @@ export default function Resources() {
           <li>
             Terrain STLs:
             <ul>
-              <li><Link href="https://www.thingiverse.com/jodawznev/designs" target="_blank">Thingiverse</Link></li>
-              <li><Link href="https://cults3d.com/en/users/jodawznev/3d-models" target="_blank">Cults3d</Link></li>
+              <li><Link href="https://www.thingiverse.com/jodawznev/designs" target="_blank" className="underline">Thingiverse</Link></li>
+              <li><Link href="https://cults3d.com/en/users/jodawznev/3d-models" target="_blank" className="underline">Cults3d</Link></li>
             </ul>
           </li>
         </ul>
