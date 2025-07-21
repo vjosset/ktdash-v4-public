@@ -6,7 +6,15 @@ export default function Resources() {
     <div className="space-y-4">
       <div className="section">
         <SectionTitle>Resources</SectionTitle>
-        <em>Coming soon!</em>
+        <ul>
+          <li>
+            Terrain STLs:
+            <ul>
+              <li><Link href="https://www.thingiverse.com/jodawznev/designs" target="_blank">Thingiverse</Link></li>
+              <li><Link href="https://cults3d.com/en/users/jodawznev/3d-models" target="_blank">Cults3d</Link></li>
+            </ul>
+          </li>
+        </ul>
       </div>
       <div className="section">
         <SectionTitle>Community</SectionTitle>
@@ -16,7 +24,7 @@ export default function Resources() {
         </p>
         <ul>
           <li><Link href="https://discord.gg/zyuVDgYNeY" target="_blank" className="underline">Discord</Link></li>
-          <li><Link href="https://github.com/vjosset/ktdash-v4" target="_blank" className="underline">GitHub</Link></li>
+          <li><Link href="https://github.com/vjosset/ktdash-v4-public" target="_blank" className="underline">GitHub</Link></li>
         </ul>
       </div>
     </div>
