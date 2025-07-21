@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId    String   @id @db.VarChar(20)
+  email     String?  @db.VarChar(250)
+  userName  String   @unique @db.VarChar(250)
+  password  String   @db.VarChar(250)
+  createdAt DateTime @default(now())
+
+  rosters Roster[]
+}
+
+model WebEvent {
+  eventId     Int      @id @default(autoincrement())
+  datestamp   DateTime @default(now())
+  sessionType String   @db.VarChar(50)
+  userId      String?  @db.VarChar(45)
+  eventType   String?  @db.VarChar(50)
+  action      String?  @db.VarChar(45)
+  label       String?  @db.VarChar(45)
+  var1        String?  @db.VarChar(45)
+  var2        String?  @db.VarChar(45)
+  var3        String?  @db.VarChar(45)
+  url         String   @db.VarChar(500)
+  userIp      String   @db.VarChar(250)
+  userAgent   String   @db.VarChar(500)
+  referrer    String?  @db.VarChar(500)
+
+  @@index([userId, eventType, action, label], name: "IX_TAL")
+  @@index([var1, eventType, action, label], name: "IX_VAR1")
+  @@index([userId], name: "IX_USER")
+  @@index([datestamp], name: "IX_datestamp")
+}
+
+model Faction {
+  factionId   String @id @db.VarChar(10)
+  factionName String @db.VarChar(250)
+  description String @db.Text
+  seq         Int    @default(0)
+
+  killteams Killteam[]
+}
+
+model Killteam {
+  killteamId   String  @id @db.VarChar(20)
+  factionId    String  @db.VarChar(10)
+  seq          Int     @default(0)
+  killteamName String  @db.VarChar(250)
+  description  String  @db.Text
+  composition  String  @db.Text
+  archetypes   String? @db.VarChar(250)
+
+  faction    Faction?    @relation(fields: [factionId], references: [factionId])
+  opTypes    OpType[]
+  rosters    Roster[]
+  ploys      Ploy[]
+  equipments Equipment[]
+}
+
+model OpType {
+  opTypeId   String @id @db.VarChar(30)
+  killteamId String @db.VarChar(20)
+  seq        Int    @default(0)
+  opTypeName String @db.VarChar(250)
+  MOVE       String @db.VarChar(10)
+  APL        Int    @default(0)
+  SAVE       String @db.VarChar(10)
+  WOUNDS     Int    @default(0)
+  keywords   String @db.VarChar(250)
+  basesize   Int    @default(32)
+  nameType   String @default("") @db.VarChar(50)
+
+  weapons   Weapon[]
+  abilities Ability[]
+  options   Option[]
+  killteam  Killteam? @relation(fields: [killteamId], references: [killteamId])
+  ops       Op[]
+}
+
+model Weapon {
+  wepId     String  @id @db.VarChar(40)
+  opTypeId  String  @db.VarChar(30)
+  seq       Int     @default(0)
+  wepName   String  @db.VarChar(250)
+  wepType   String  @db.VarChar(1)
+  isDefault Boolean @default(false)
+
+  profiles WeaponProfile[]
+  opType   OpType?         @relation(fields: [opTypeId], references: [opTypeId])
+}
+
+model WeaponProfile {
+  wepprofileId String  @id @db.VarChar(50)
+  wepId        String  @db.VarChar(40)
+  seq          Int     @default(0)
+  profileName  String  @db.VarChar(250)
+  ATK          String  @db.VarChar(10)
+  HIT          String  @db.VarChar(10)
+  DMG          String  @db.VarChar(10)
+  WR           String  @db.VarChar(250)
+  weapon       Weapon? @relation(fields: [wepId], references: [wepId])
+}
+
+model Ability {
+  abilityId   String  @id @db.VarChar(50)
+  opTypeId    String  @db.VarChar(30)
+  abilityName String  @db.VarChar(250)
+  description String  @db.Text
+  AP          Int?
+  opType      OpType? @relation(fields: [opTypeId], references: [opTypeId])
+}
+
+model WeaponRule {
+  code        String  @id @db.VarChar(20)
+  ruleName    String  @db.VarChar(250)
+  description String? @db.Text
+}
+
+model Roster {
+  rosterId          String   @id @db.VarChar(20)
+  userId            String   @db.VarChar(20)
+  seq               Int      @default(0)
+  killteamId        String   @db.VarChar(20)
+  rosterName        String   @db.VarChar(250)
+  turn              Int      @default(1)
+  VP                Int      @default(0)
+  CP                Int      @default(3)
+  hasCustomPortrait Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  eqIds             String   @default("")
+
+  ops      Op[]
+  user     User?     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  killteam Killteam? @relation(fields: [killteamId], references: [killteamId], onDelete: Cascade)
+}
+
+model Op {
+  opId              String   @id @db.VarChar(20)
+  rosterId          String   @db.VarChar(20)
+  opTypeId          String   @db.VarChar(30)
+  seq               Int      @default(0)
+  opName            String   @db.VarChar(250)
+  currWOUNDS        Int      @default(0)
+  isActivated       Boolean  @default(false)
+  opOrder           String   @default("concealed") @db.VarChar(10)
+  wepIds            String   @db.VarChar(250)
+  optionIds         String   @db.VarChar(250)
+  hasCustomPortrait Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  roster Roster? @relation(fields: [rosterId], references: [rosterId], onDelete: Cascade)
+  opType OpType? @relation(fields: [opTypeId], references: [opTypeId], onDelete: Cascade)
+}
+
+model Option {
+  optionId    String @id @db.VarChar(50)
+  opTypeId    String @db.VarChar(30)
+  seq         Int    @default(0)
+  optionName  String @db.VarChar(50)
+  description String @db.Text
+  effects     String @db.VarChar(50)
+
+  opType OpType? @relation(fields: [opTypeId], references: [opTypeId], onDelete: Cascade)
+}
+
+model Equipment {
+  eqId        String  @id @db.VarChar(50)
+  killteamId  String? @db.VarChar(20)
+  seq         Int     @default(0)
+  eqName      String  @db.VarChar(250)
+  description String  @db.Text
+  effects     String  @db.VarChar(250)
+
+  killteam Killteam? @relation(fields: [killteamId], references: [killteamId], onDelete: Cascade)
+}
+
+model Ploy {
+  ployId      String @id @db.VarChar(50)
+  killteamId  String @db.VarChar(20)
+  seq         Int    @default(0)
+  ployType    String @db.VarChar(50)
+  ployName    String @db.VarChar(250)
+  description String @db.Text
+  effects     String @db.VarChar(250)
+
+  killteam Killteam? @relation(fields: [killteamId], references: [killteamId], onDelete: Cascade)
+}

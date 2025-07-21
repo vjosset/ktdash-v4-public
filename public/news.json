@@ -1,0 +1,17 @@
+[
+  {
+    "date": "2025-07-17",
+    "title": "Fixes",
+    "description": "Add universal equipment + lots of fixes throughout including Killteam composition, missing or incorrect weapon rules, and others."
+  },
+  {
+    "date": "2025-07-16",
+    "title": "Killteam Page Updates, auto-apply mods",
+    "description": "Added killteam composition, equipment, and ploys to the killteam pages. Added support for mods on weapons and operatives (e.g. Mark of Chaos or Custom Bolt Carbine)."
+  },
+  {
+    "date": "2025-06-11",
+    "title": "Dev Start",
+    "description": "Started the rewrite."
+  }
+]

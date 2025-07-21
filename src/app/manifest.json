@@ -1,0 +1,21 @@
+{
+  "name": "KTDash",
+  "short_name": "KTDash",
+  "start_url": "/me",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#b3441b",
+  "description": "KTDash.app",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

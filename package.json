@@ -1,0 +1,53 @@
+{
+  "name": "ruinstars-app",
+  "version": "0.1.0",
+  "private": true,
+  "license": "LicenseRef-Ruinstars-Proprietary",
+  "scripts": {
+    "seed": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/seed.ts",
+    "dev": "PORT=7000 next dev",
+    "build": "next build",
+    "start": "PORT=6000 next start",
+    "lint": "npx eslint \"src/**/*.ts\" --fix",
+    "genseed": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/generateSeedData.ts"
+  },
+  "dependencies": {
+    "@headlessui/react": "^2.2.1",
+    "@prisma/client": "^6.5.0",
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/bcryptjs": "^2.4.6",
+    "autoprefixer": "^10.4.21",
+    "bcryptjs": "^2.4.3",
+    "clsx": "^2.1.1",
+    "depcheck": "^1.4.7",
+    "embla-carousel-react": "^8.6.0",
+    "formidable": "^3.5.4",
+    "nanoid": "^4.0.2",
+    "next": "latest",
+    "next-auth": "^4.24.11",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-icons": "^5.5.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "sharp": "^0.34.3",
+    "sonner": "^2.0.6"
+  },
+  "devDependencies": {
+    "@next/eslint-plugin-next": "^15.3.3",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/formidable": "^3.4.5",
+    "@types/node": "22.13.14",
+    "@types/react": "19.0.12",
+    "@types/react-dom": "^19.1.1",
+    "@typescript-eslint/eslint-plugin": "^8.33.1",
+    "@typescript-eslint/parser": "^8.33.1",
+    "eslint": "^9.28.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "tailwindcss": "^3.4.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

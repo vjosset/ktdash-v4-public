@@ -1,0 +1,80 @@
+User-agent: *
+Allow: /
+Crawl-delay: 5
+
+Disallow: /rosters$
+Disallow: /users$
+Disallow: /api/
+Disallow: /me/
+
+# Sitemap
+Sitemap: https://ruinstars.com/sitemap.xml
+
+# Block shitty bots
+# Block Amazon crawler
+User-agent: Amazonbot
+Disallow: /
+# Block dotbot
+User-agent: dotbot 
+Disallow: /
+# Block Yandex
+User-agent: Yandex 
+Disallow: /
+# Block all Semrush crawlers/bots
+User-agent: SemrushBot
+Disallow: /
+User-agent: SplitSignalBot
+Disallow: /
+User-agent: SiteAuditBot
+Disallow: /
+User-agent: SemrushBot-BA
+Disallow: /
+User-agent: SemrushBot-SI
+Disallow: /
+User-agent: SemrushBot-SWA
+Disallow: /
+User-agent: SemrushBot-CT
+Disallow: /
+User-agent: SemrushBot-BM
+Disallow: /
+User-agent: CCBot
+Disallow: /
+# Block jerks
+User-agent: anthropic-ai
+Disallow: /
+User-agent: Amazonbot
+Disallow: /
+User-agent: Bytespider
+Disallow: /
+User-agent: ClaudeBot
+Disallow: /
+# Block Google AdsBot
+User-agent: AdsBot
+Disallow: /
+# Block PetalBot
+User-agent: PetalBot
+Disallow: /
+# Block Claude (LLM Scraper)
+User-agent: ClaudeBot
+Crawl-delay: 100
+Disallow: /
+# Block Common Crawl (LLM Scraper)
+User-agent: CCBot
+Crawl-delay: 100
+Disallow: /
+# Block GPT bot (OpenAI Scraper)
+User-agent: GPTBot
+Crawl-delay: 100
+Disallow: /
+# Block OAI-SearchBot (OpenAI Search Bot)
+User-agent: OAI-SearchBot
+Crawl-delay: 100
+Disallow: /
+# Block Facebook/Meta
+User-agent: facebookexternalhit
+Crawl-delay: 100
+Disallow: /
+# Block Facebook/Meta
+User-agent: meta-externalagent
+Crawl-delay: 100
+Disallow: /

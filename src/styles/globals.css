@@ -1,0 +1,266 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'title';
+  src: url('/fonts/Oswald.ttf');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'heading';
+  src: url('/fonts/Oswald.ttf');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'stat';
+  src: url('/fonts/Oswald.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'main';
+  src: url('/fonts/Oswald.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+html,
+body {
+  background-color: theme('colors.background.DEFAULT');
+	background-size: 100%;
+  color: theme('colors.foreground.DEFAULT');
+  @apply font-main;
+}
+
+.hastip::after {
+  content: 'ⓘ'; /* Also try ? or ℹ️ */
+  font-size: 0.8em;
+	
+  display: inline;
+  vertical-align: super;
+  margin-left: 0.2em;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+	font-style: normal;
+}
+
+.stat {
+  @apply font-stat uppercase;
+  font-weight: normal;
+}
+
+h1 {
+  @apply font-heading uppercase text-5xl font-title text-main;
+  font-weight: normal;
+  color: theme('colors.foreground.DEFAULT');
+}
+
+h2, h3, h4, h5, h6 {
+  @apply font-main uppercase;
+  font-weight: normal;
+}
+
+h2 { @apply text-4xl; }
+h3 { @apply text-3xl; }
+h4 { @apply text-2xl; }
+h5 { @apply text-xl; }
+
+@layer base {
+  ul, ol {
+    list-style: revert;
+    padding-left: 1.25rem; /* smaller than the default ~2rem */
+  }
+
+	ol {
+		list-style: decimal;
+	}
+
+  .markdown ul {
+    margin-bottom: 5px !important;
+    margin-top: 5px !important;
+  }
+
+  .markdown li {
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+    line-height: normal;
+  }
+
+  .markdown p {
+    margin-bottom: 5px !important;
+    margin-top: 5px !important;
+  }
+}
+
+table {
+	width: 100%;
+}
+
+th {
+	text-align: left;
+	vertical-align: top;
+	white-space: nowrap;
+}
+
+td {
+	vertical-align: top;
+}
+
+thead {
+	@apply border-b border-border;
+}
+
+hr {
+	@apply my-12 mx-12 border-border;
+}
+
+.markdown td, .markdown th {
+	margin: 0;
+	padding: 2px;
+}
+
+.flavor::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: repeating-linear-gradient(
+		0deg,
+		transparent,
+		transparent 2px,
+		rgba(255, 255, 255, 0.020) 4px
+	);
+	pointer-events: none;
+}
+
+.flavor_old {
+	@apply mx-4 text-base sm:text-base leading-relaxed text-muted font-mono tracking-wide italic border-l-4 pl-4 border-orange-800 bg-zinc-950/30 rounded-md p-4 shadow-inner;
+	background-color: theme('colors.card.DEFAULT');
+	font-family: Flavor, serif;
+}
+
+.flavor a, .flavor a:link, .flavor a:visited, .flavor a:hover, .flavor a:active {
+	color: var(--maincolor);
+}
+
+.news a {
+	text-decoration: underline;
+}
+
+.printonly { display: none; }
+
+/*
+@media print {
+  :root {
+    --tw-bg-opacity: 1;
+    --tw-text-opacity: 1;
+  }
+
+	@page {
+    size: 8.5in 11in !important;
+		margin: 0.5in !important;
+  }
+
+	body {
+		zoom: 66%;
+		background-image: url(/img/ui/mech02.png);
+		background-size: 12.8in 16.7in;
+	}
+	
+	.noprint {
+		display: none !important;
+	}
+
+	.printonly {
+		display: inline;
+	}
+
+  .text-main {
+    @apply text-main-print;
+  }
+
+  .bg-card {
+    @apply bg-card-print;
+  }
+
+  .border-border {
+    @apply border-border-print;
+  }
+	
+  .flavor {
+    background: none !important;
+    border: 1px solid #666 !important;
+    color: black !important;
+    text-shadow: none !important;
+  }
+
+  .flavor::before {
+    display: none !important;
+  }
+	
+	.hastip::after {
+    display: none !important;
+	}
+}
+*/
+
+/* FULL COLOR PRINT STYLES */
+@media print {
+  :root {
+    --tw-bg-opacity: 1;
+    --tw-text-opacity: 1;
+  }
+
+	@page {
+    size: 8.5in 11in !important;
+		margin: 0.5in !important;
+  }
+
+	body {
+		zoom: 66%;
+		background-image: url(/img/ui/mech02.png);
+		background-size: 12.8in 16.7in;
+	}
+	
+	.noprint {
+		display: none !important;
+	}
+
+	.printonly {
+		display: inline;
+	}
+
+  .text-main {
+    @apply text-main-print;
+  }
+
+  .bg-card {
+    @apply bg-card-print;
+  }
+
+  .border-border {
+    @apply border-border-print;
+  }
+	
+  .flavor {
+    background: none !important;
+    border: 1px solid #666 !important;
+    color: text !important;
+    text-shadow: none !important;
+  }
+
+  /* Remove special effects that might interfere with print */
+  .flavor::before {
+    display: none !important;
+  }
+	
+	.hastip::after {
+    display: none !important;
+	}
+}

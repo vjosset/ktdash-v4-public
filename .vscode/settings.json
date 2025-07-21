@@ -1,0 +1,28 @@
+{
+  // ...existing exclusion settings...
+  // Disable TypeScript's built-in formatter completely
+  "typescript.format.enable": false,
+  "javascript.format.enable": false,
+  // Disable general format on save in favor of ESLint
+  "editor.formatOnSave": false,
+  // Use ESLint as the default formatter
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  // Configure ESLint auto-fix on save
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always",
+    "source.organizeImports": "always"
+  },
+  // Set specific formatter for TypeScript/React files
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#c54c21",
+    "titleBar.activeForeground": "#ffffff",
+    "titleBar.inactiveBackground": "#421708",
+    "titleBar.inactiveForeground": "#ffffff",
+  }
+}

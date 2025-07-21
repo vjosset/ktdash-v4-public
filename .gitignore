@@ -1,0 +1,12 @@
+node_modules
+/.next
+/.env
+/.env.development
+/.env.local
+/.env.production
+/.env.test
+deploy.sh
+.DS_Store
+/==Notes
+/prisma/==DataNotes.md
+/public/uploads/
