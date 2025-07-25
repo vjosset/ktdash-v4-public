@@ -21,9 +21,6 @@ export async function generateMetadata({ params }: { params: Promise<{ userName:
   return generatePageMetadata({
     title: `${user.userName}'s Rosters`,
     description: `View and import ${user.userName}'s rosters on ${GAME.NAME}.`,
-    image: {
-      url: '/img/hero01.webp',
-    },
     keywords: [user.userName, 'user', 'roster', 'roster builder', 'battle tracker'],
     pagePath: `/users/${user.userName}`
   })

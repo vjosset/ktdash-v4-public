@@ -36,12 +36,7 @@ export async function generatePageMetadata({
     width: image.width || 1200,
     height: image.height || 630,
     alt: image.alt || pageTitle,
-  } : {
-    url: `${baseUrl}/img/homesplash_5.jpg`,
-    width: 1200,
-    height: 630,
-    alt: GAME.NAME,
-  }
+  } : null
 
   return {
     title: pageTitle,
@@ -72,7 +67,7 @@ export async function generatePageMetadata({
       description: pageDescription,
       url: baseUrl,
       siteName: GAME.NAME,
-      images: [pageImage],
+      images: pageImage ? [pageImage] : [],
       type: 'website',
       locale: 'en_US',
     },
@@ -82,7 +77,7 @@ export async function generatePageMetadata({
       card: 'summary_large_image',
       title: pageTitle,
       description: pageDescription,
-      images: [pageImage.url]
+      images: pageImage ? [pageImage.url] : []
     },
 
     // Additional metadata

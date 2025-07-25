@@ -264,14 +264,14 @@ WHERE killteamid IS NULL AND eqid = 'UNIVERSAL-UE-XG-KRAK';
 
 /*Users*/
 INSERT INTO User (userId, email, userName, password)
-SELECT userId, '', userName, passhash FROM killteam.User WHERE userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g');
+SELECT userId, '', userName, passhash FROM killteam.User WHERE userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g', 'cWwiz', 'yjYl7');
 
 /*Rosters*/
 INSERT INTO ktdashv4.Roster (rosterid, userid, killteamId, rosterName, seq, hasCustomPortrait, updatedAt)
 SELECT R.rosterId, R.userid, CONCAT(R.factionid, '-', REPLACE(R.killteamid, '24', '')), R.rostername, R.seq, false, NOW()
 FROM killteam.Roster R INNER JOIN killteam.Killteam K ON K.killteamid = R.killteamId AND K.factionid = R.factionId
 WHERE K.factionid NOT IN ('HBR', 'SPEC') AND K.edition = 'kt24'
-AND R.userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g');
+AND R.userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g', 'cWwiz', 'yjYl7');
 
 /*Ops*/
 INSERT INTO ktdashv4.Op (opId, rosterId, opTypeId, seq, opName, isActivated, currWOUNDS, wepIds, optionIds, hasCustomPortrait, updatedAt)
@@ -280,22 +280,22 @@ CONCAT(RO.factionid, '-', REPLACE(RO.killteamid, '24', ''), '-', RO.opid, '-', R
 '', false, NOW()
 FROM killteam.Roster R INNER JOIN killteam.Killteam K ON K.killteamid = R.killteamId AND K.factionid = R.factionId INNER JOIN killteam.RosterOperative RO ON RO.rosterid = R.rosterID INNER JOIN killteam.Operative O ON O.factionid = RO.factionid AND O.killteamid = RO.killteamid AND O.fireteamid = RO.fireteamid AND O.opid = RO.opid
 WHERE K.factionid NOT IN ('HBR', 'SPEC') AND K.edition = 'kt24'
-AND R.userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g');
+AND R.userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g', 'cWwiz', 'yjYl7');
 
 /* FOR GO-LIVE - SELECT A CUTOFF DATE (2025-01-01 in the example below)
-SELECT U.userId, '', U.userName, U.passhash FROM killteam.User U WHERE userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g') OR userid IN (SELECT DISTINCT UserID FROM killteam.Event WHERE datestamp > '2025-01-01' AND userid != '[anon]');
+SELECT U.userId, '', U.userName, U.passhash FROM killteam.User U WHERE userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g', 'yjYl7') OR userid IN (SELECT DISTINCT UserID FROM killteam.Event WHERE datestamp > '2025-01-01' AND userid != '[anon]');
 
 SELECT R.rosterId, R.userid, CONCAT(R.factionid, '-', REPLACE(R.killteamid, '24', '')), R.rostername, R.seq, false, NOW()
 FROM killteam.Roster R INNER JOIN killteam.Killteam K ON K.killteamid = R.killteamId AND K.factionid = R.factionId
 WHERE K.factionid NOT IN ('HBR', 'SPEC') AND K.edition = 'kt24'
-AND R.userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g') OR userid IN (SELECT DISTINCT UserID FROM killteam.Event WHERE datestamp > '2025-01-01' AND userid != '[anon]');
+AND R.userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g', 'yjYl7') OR userid IN (SELECT DISTINCT UserID FROM killteam.Event WHERE datestamp > '2025-01-01' AND userid != '[anon]');
 
 SELECT RO.rosteropid, RO.rosterid, CONCAT(RO.factionid, '-', REPLACE(RO.killteamid, '24', ''), '-', RO.opid), RO.seq, RO.opname, RO.activated, O.W,
 CONCAT(RO.factionid, '-', REPLACE(RO.killteamid, '24', ''), '-', RO.opid, '-', REPLACE(RO.wepIds, ',', CONCAT(',', RO.factionid, '-', REPLACE(RO.killteamid, '24', ''), '-', RO.opid, '-'))),
 '', false, NOW()
 FROM killteam.Roster R INNER JOIN killteam.Killteam K ON K.killteamid = R.killteamId AND K.factionid = R.factionId INNER JOIN killteam.RosterOperative RO ON RO.rosterid = R.rosterID INNER JOIN killteam.Operative O ON O.factionid = RO.factionid AND O.killteamid = RO.killteamid AND O.fireteamid = RO.fireteamid AND O.opid = RO.opid
 WHERE K.factionid NOT IN ('HBR', 'SPEC') AND K.edition = 'kt24'
-AND R.userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g') OR R.userid IN (SELECT DISTINCT UserID FROM killteam.Event WHERE datestamp > '2025-01-01' AND userid != '[anon]');
+AND R.userid IN ('vince', 'prebuilt', 'ZiSLC', 'g0o0g', 'yjYl7') OR R.userid IN (SELECT DISTINCT UserID FROM killteam.Event WHERE datestamp > '2025-01-01' AND userid != '[anon]');
 */
 
 /*WeaponRules*/
@@ -321,7 +321,7 @@ INSERT INTO WeaponRule (code, rulename, description) VALUES ('RENDING', 'Rending
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('RNG_', 'Range _', 'Range limit of the weapon.');
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('SAT', 'Saturate', 'The defender cannot retain Cover saves.');
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('SATURATE', 'Saturate', 'The defender cannot retain Cover saves.');
-INSERT INTO WeaponRule (code, rulename, description) VALUES ('SEV', 'Severe', 'If you do not retain any critical successes, you can change one of your normal successes to a critical success. Any rules that take effect as a result of retaining a critical success (e.g. Devastating, Piercing Crits, etc.) still do.');
+INSERT INTO WeaponRule (code, rulename, description) VALUES ('SEV', 'Severe', 'If you do not retain any critical successes, you can change one of your normal successes to a critical success. The Devastating and Piercing Crits weapon rules still take effect, but Punishing and Rending don’t.');
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('SHOCK', 'Shock', 'The first time you strike with a critical success in each sequence, also discard one of your opponent''s unresolved normal successes (or a critical success if there are none).');
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('SIL', 'Silent', 'Can Shoot this weapon while on a Conceal order.');
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('SILENT', 'Silent', 'Can Shoot this weapon while on a Conceal order.');
