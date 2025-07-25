@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ killteamI
     title: `${killteam.killteamName}`,
     description: `${killteam.description}`,
     image: {
-      url: `/img/killteams/${killteamId}.webp`,
+      url: `/img/killteams/${killteamId}.jpg`,
     },
     keywords: ['home', 'roster builder', 'battle tracker', 'killteam', killteam.killteamId, killteam.killteamName],
     pagePath: `/killteams/${killteam.killteamId}`
