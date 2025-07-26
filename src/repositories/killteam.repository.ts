@@ -33,7 +33,8 @@ export class KillteamRepository extends BaseRepository {
               ]
             },
             abilities: true,
-          }
+          },
+          orderBy: { seq: 'asc' }
         },
         ploys: {
           orderBy: [
