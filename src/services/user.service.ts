@@ -26,6 +26,11 @@ export class UserService {
     return user ? new User(user) : null
   }
 
+  static async updateUser(userId: string, data: Partial<User>): Promise<User | null> {
+    await this.repository.updateUser(userId, data)
+    return await this.getUser(userId)
+  }
+
   static async fixRosterSeqs(userId: string): Promise<null> {
     // Reorder/re-seq the user's rosters
     await this.repository.fixRosterSeqs(userId)

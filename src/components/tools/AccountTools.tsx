@@ -1,11 +1,43 @@
 'use client'
 
 import { Button, Input, Modal, SectionTitle } from '@/components/ui'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 export default function AccountTools() {
+  const { status, data: session } = useSession()
+  
   const [showConfirmLogOut, setShowConfirmLogOut] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+
+  const updatePassword = () => {
+    if (!session?.user) {
+      toast.error('Please log in before updating your password.')
+      return
+    }
+
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters long.')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match")
+      return
+    }
+
+    const res = fetch(`/api/users/${session?.user?.userName}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ password }),
+    }).then((res) => {if (res.ok) {
+      toast.success('Password updated')
+    } else {
+      toast.error('Could not update password')
+    }
+    });
+  }
 
   return (
     <>
@@ -22,10 +54,20 @@ export default function AccountTools() {
         <hr />
         <div>
           <SectionTitle>Change Password</SectionTitle>
-          <Input type="password" placeholder="New password" />
-          <Input type="password" placeholder="Confirm New password" />
+          <Input
+            type="password"
+            placeholder="New password"
+            value={password}
+            onChange={e => setPassword(e.target.value)} />
+          <Input
+            type="password"
+            placeholder="Confirm New password"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)} />
           <div className="flex justify-end">
-            <Button onClick={() => alert('Not implemented')}><h6>Update Password</h6></Button>
+            <Button onClick={updatePassword}>
+              <h6>Update Password</h6>
+            </Button>
           </div>
         </div>
       </div>
