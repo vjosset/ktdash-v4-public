@@ -52,7 +52,19 @@ export default [
           args: 'after-used',
           argsIgnorePattern: '^_'
         }
-      ]
+      ],
+      // Enforce alias consistency: never use '@/src/...'
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/src/*'],
+              message: "Use '@/*' without 'src' prefix (e.g., '@/services' not '@/src/services').",
+            },
+          ],
+        },
+      ],
     },
     settings: {
       react: {

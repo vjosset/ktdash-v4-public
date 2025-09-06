@@ -9,7 +9,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ rosterId
   const roster = await RosterService.getRoster(rosterId)
 
   // Return the Roster
-  return NextResponse.json(roster)
+  return NextResponse.json(roster?.toPlain())
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ rosterId: string }> }) {

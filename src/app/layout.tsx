@@ -4,7 +4,7 @@ import NavBarTop from '@/components/nav/NavBarTop'
 import ServiceWorkerRegister from '@/components/tools/ServiceWorkerRegister'
 import { ClientProviders } from '@/components/ui/ClientProviders'
 import { authOptions } from '@/lib/auth'
-import '@/src/styles/globals.css'
+import '@/styles/globals.css'
 import { getServerSession } from 'next-auth'
 import Script from 'next/script'
 

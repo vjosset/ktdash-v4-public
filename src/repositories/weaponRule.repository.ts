@@ -14,8 +14,8 @@ export class WeaponRuleRepository extends BaseRepository {
     })
   }
 
-  async getAllWeaponRules() {
+  async getAllWeaponRules(): Promise<WeaponRule[]> {
     const rules = await this.prisma.weaponRule.findMany()
-    return rules.sort((a, b) => (b.code?.length || 0) - (a.code?.length || 0))
+    return rules.sort((a: WeaponRule, b: WeaponRule) => (b.code?.length || 0) - (a.code?.length || 0))
   }
 }

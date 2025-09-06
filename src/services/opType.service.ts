@@ -1,4 +1,4 @@
-import { OpTypeRepository } from '@/src/repositories/opType.repository'
+import { OpTypeRepository } from '@/repositories/opType.repository'
 import { OpType } from '@/types'
 
 export class OpTypeService {

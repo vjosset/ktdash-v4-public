@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { genId } from '@/lib/utils/utils'
-import { OpRepository } from '@/src/repositories/op.repository'
+import { OpRepository } from '@/repositories/op.repository'
 import { Ability, Op, Option, Weapon } from '@/types'
 import fs from 'fs/promises'
 import path from 'path'
@@ -11,17 +10,15 @@ export class OpService {
 
   static async getOpRow(opId: string): Promise<Op | null> {
     const op = await this.repository.getOpRow(opId)
-    return op ? new Op(op) : null
+    return op ? new Op(op as any) : null
   }
 
   static async getOp(opId: string): Promise<Op | null> {
     const raw = await this.repository.getOp(opId)
     if (!raw) return null
 
-    const op = raw ? new Op(raw) : null
-
+    const op = new Op(raw as any)
     this.buildOpStats(op)
-
     return op
   }
 
@@ -58,11 +55,11 @@ export class OpService {
     return true
   }
 
-  static buildOpStats(op: Op) {
-    op.MOVE = op.opType?.MOVE
-    op.APL = op.opType?.APL
-    op.SAVE = op.opType?.SAVE
-    op.WOUNDS = op.opType?.WOUNDS
+  static buildOpStats(op: Op): void {
+    op.MOVE = op.opType?.MOVE || ''
+    op.APL = op.opType?.APL || 0
+    op.SAVE = op.opType?.SAVE || ''
+    op.WOUNDS = op.opType?.WOUNDS || 0
 
     this.buildOpGear(op)
 
@@ -83,30 +80,31 @@ export class OpService {
     }
   }
 
-  static buildOpGear(op: Op) {
+  static buildOpGear(op: Op): void {
     // Loop through the weapons, options, and abilities to find the ones selected by this operative
-    op.weapons = op.weapons ?? []
-    op.opType.weapons?.map((wep) => {
+    const weapons: Weapon[] = op.weapons ?? []
+    op.opType?.weapons?.forEach((wep) => {
       if ((',' + op.wepIds + ',').includes(',' + wep.wepId + ',')) {
         // This is one of this op's selected weapons
-        op.weapons.push(new Weapon(structuredClone(wep)))
+        weapons.push(new Weapon(structuredClone(wep)))
       }
     })
 
-    op.weapons = op.weapons.sort((a, b) => a.seq - b.seq)
+    op.weapons = weapons.sort((a, b) => a.seq - b.seq)
     
-    op.options = op.options ?? []
-    op.opType.options?.map((opt) => {
+    const options: Option[] = op.options ?? []
+    op.opType?.options?.forEach((opt) => {
       if ((',' + op.optionIds + ',').includes(',' + opt.optionId + ',')) {
         // This is one of this op's selected options
-        op.options.push(new Option(structuredClone(opt)))
+        options.push(new Option(structuredClone(opt)))
       }
     })
+    op.options = options
 
-    op.abilities = op.opType.abilities.map((ability) => new Ability(structuredClone(ability)))
+    op.abilities = op.opType?.abilities?.map((ability) => new Ability(structuredClone(ability)))
 
     // Now loop through the options and apply the effects
-    op.options.map((opt) => {
+    op.options.forEach((opt) => {
       if (!opt.effects || opt.effects == '|' || opt.effects == '') return
 
       const effects = opt.effects.split('|')
@@ -137,18 +135,18 @@ export class OpService {
           const filterIds = filterValue.split(',')
 
           affectedWeapons.push(
-            ...op.weapons.filter((w) =>
+            ...(op.weapons ?? []).filter((w) =>
               filterIds.some((id) => w.wepId.endsWith(id))
             )
           )
         } else {
           // This effect applies to all weapons of a specific type
-          affectedWeapons.push(...op.weapons.filter((w) => w.wepType === filterValue))
+          affectedWeapons.push(...(op.weapons ?? []).filter((w) => w.wepType === filterValue))
         }
 
         // Now apply the effect to the affected field on the affected weapons
         affectedWeapons.forEach((weapon) => {
-          weapon.profiles.forEach((profile) => {
+          weapon.profiles?.forEach((profile) => {
             switch (affectedField) {
               case 'WR':
               case 'SR':
@@ -166,7 +164,7 @@ export class OpService {
                 break
               case 'A':
               case 'ATK':
-                profile.ATK = (Number(profile.ATK) || 0) + Number(fieldMod)
+                profile.ATK = ((Number(profile.ATK) || 0) + Number(fieldMod)).toString()
                 break
             }
           })
@@ -214,7 +212,7 @@ export class OpService {
   
   static async deleteOpPortrait(opId: string): Promise<void> {
     const op = await this.getOpRow(opId)
-    if (!op?.hasCustomPortrait) return
+    if (!op?.hasCustomPortrait || !op.rosterId) return
 
     const roster = await RosterService.getRosterRow(op.rosterId)
     if (!roster) throw new Error('Roster not found')

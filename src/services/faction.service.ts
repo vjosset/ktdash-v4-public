@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { FactionRepository } from '@/src/repositories/faction.repository'
+import { FactionRepository } from '@/repositories/faction.repository'
 import { Faction } from '@/types'
 
 export class FactionService {

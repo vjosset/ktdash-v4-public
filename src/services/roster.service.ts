@@ -1,7 +1,6 @@
-//@ts-nocheck
 import { genId } from '@/lib/utils/utils';
-import { RosterRepository } from '@/src/repositories/roster.repository';
-import { Equipment, Option, Roster, Weapon } from '@/types';
+import { RosterRepository } from '@/repositories/roster.repository';
+import { Equipment, Option, Roster, Weapon, WeaponProfile } from '@/types';
 import fs from 'fs/promises';
 import path from 'path';
 import { OpService } from './op.service';
@@ -12,55 +11,62 @@ export class RosterService {
 
   static async getRosterRow(rosterId: string): Promise<Roster | null> {
     const row = await this.repository.getRosterRow(rosterId)
-    return row ? new Roster(row) : null
+    return row ? new Roster(row as any) : null
   }
 
   static async getRoster(rosterId: string): Promise<Roster | null> {
     const row = await this.repository.getRoster(rosterId)
     if (!row) return null
-    const roster = row ? new Roster(row) : null
+    const roster = new Roster(row as any)
 
     // Get the selected equipments for this roster
-    roster.equipments = [];
-    roster?.killteam?.equipments.map((eq, idx) => {
+    const equipments: Equipment[] = []
+    roster.killteam?.equipments?.forEach((eq) => {
       // Check if this equipment ID is in the current roster's eqIds
       if (roster.eqIds?.includes(eq.eqId)) {
         // This equipment is selected, push a deep-copy clone into the roster's equipments
-        roster.equipments.push(new Equipment(structuredClone(eq)))
+        equipments.push(new Equipment(structuredClone(eq)))
 
         // If this equipment has an effect (other than giving a weapon, handled below), add it to the operative's options
         if (eq.effects != '' && eq.effects?.indexOf("ADDWEP") != 0) {
           const option = new Option ({
             optionId: eq.eqId,
+            opTypeId: '',
+            optionType: 'EQUIPMENT',
+            seq: 999,
             optionName: 'Eq: ' + eq.eqName,
             description: eq.description,
             effects: eq.effects
           });
-          roster?.ops?.map((op) => op.options = op.options ?? [])
-          roster?.ops?.map((op) => op.options?.push(option))
+          roster.ops?.forEach((op) => { op.options = op.options ?? []; op.options.push(option) })
         }
 
         // If this equipment is a weapon, add it to all operatives in this roster
         if (eq.effects?.indexOf("ADDWEP") == 0) {
           // Example: ADDWEP:Combat Blade|M|5|3+|3/4|Rending
           const wepstats = eq.effects.split(":")[1].split('|');
-          const wep: Weapon = new Weapon( {
+          const wep: Weapon = new Weapon({
             wepId: eq.eqId + '-EQ', // Append "-EQ" so that options and equipments that modify specific weapon IDs don't have collisions (e.g. BG - Boltgun vs Blight Grenade)
+            opTypeId: '',
             wepName: 'Eq: ' + wepstats[0],
             wepType: wepstats[1],
+            isDefault: false,
             seq: 1000, // Always last
             profiles: [
-              {
-                profileId: eq.eqId + '-0',
+              new WeaponProfile({
+                wepprofileId: eq.eqId + '-0',
+                wepId: eq.eqId + '-EQ',
+                seq: 0,
+                profileName: 'Default',
                 ATK: wepstats[2],
                 HIT: wepstats[3],
                 DMG: wepstats[4],
                 WR: wepstats[5]
-              }
+              })
             ]
           })
 
-          roster?.ops?.map((op) => {
+          roster.ops?.forEach((op) => {
             op.weapons = op.weapons ?? [];
             // Deep-copy the weapon for each operative
             op.weapons.push(new Weapon(structuredClone(wep)));
@@ -68,15 +74,18 @@ export class RosterService {
         }
       }
     })
+    roster.equipments = equipments
 
     // Fill the ops with their OpType's stats
-    roster?.ops.map((op) => OpService.buildOpStats(op))
+    roster.ops?.forEach((op) => OpService.buildOpStats(op))
 
     return roster
   }
 
   static async getRandomSpotlight(): Promise<Roster | null> {
-    return await this.getRoster(await this.repository.getRandomSpotlightRosterId());
+    const rosterId = await this.repository.getRandomSpotlightRosterId()
+    if (!rosterId) return null
+    return await this.getRoster(rosterId)
   }
 
   static async createRoster(data: Partial<Roster>): Promise<Roster | null> {
@@ -88,6 +97,7 @@ export class RosterService {
     if (!raw) throw new Error('Failed to create roster')
   
     // Reorder/re-seq the user's rosters
+    if (!data.userId) throw new Error('Missing userId when creating roster')
     await UserService.fixRosterSeqs(data.userId)
 
     // Done -  Return latest version of the new roster
@@ -97,6 +107,7 @@ export class RosterService {
   static async updateRoster(rosterId: string, data: Partial<Roster>): Promise<Roster | null> {
     // Get original roster's state
     const originalRoster = await this.getRosterRow(rosterId)
+    if (!originalRoster) throw new Error('Roster not found')
 
     // Reset op activation if this is the next Turn
     const resetRosterActivation = !!data.turn && data.turn > originalRoster.turn
@@ -115,9 +126,10 @@ export class RosterService {
 
   static async deleteRoster(rosterId: string): Promise<void> {
     const roster = await this.getRosterRow(rosterId)
+    if (!roster) return
 
     // Delete all images/portraits for this roster
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    const uploadDir = process.env.UPLOADS_DIR!
     const dirName = path.join(uploadDir, `user_${roster.userId}`, `roster_${rosterId}`)
     try {
       await fs.rm(dirName, { recursive: true, force: true })
@@ -162,7 +174,7 @@ export class RosterService {
     })
 
     // Reset all ops' activation and currWOUNDS
-    await Promise.all(roster.ops.map(async op => {
+    await Promise.all((roster.ops ?? []).map(async op => {
       // Op's wounds should already be updated if needed in getRoster which calls buildOpStats to apply mods
       const newCurrWOUNDS = op.WOUNDS
       await OpService.updateOp(op.opId, { currWOUNDS: newCurrWOUNDS, isActivated: false})
@@ -182,14 +194,14 @@ export class RosterService {
     if (!sourceRoster) return null
     
     // Prepare a deep-copy clone of the roster
-    const newRoster = JSON.parse(JSON.stringify(sourceRoster))
+    const newRoster: any = JSON.parse(JSON.stringify(sourceRoster))
 
     // Update its fields
     newRoster.userId = destUserId
-    newRoster.name = destRosterName
+    newRoster.rosterName = destRosterName
 
     // Prepare the ops
-    for(const op of newRoster.ops) {
+    for (const op of (newRoster.ops ?? [])) {
       op.rosterId = newRoster.rosterId
       op.opId = genId()
     }
@@ -198,7 +210,7 @@ export class RosterService {
       userId: destUserId,
       killteamId: newRoster.killteamId,
       seq: -1,
-      rosterName: newRoster.name,
+      rosterName: newRoster.rosterName,
       turn: 1,
       VP: 0,
       CP: 3,
@@ -212,10 +224,10 @@ export class RosterService {
 
     if (sourceRoster.userId != destUserId) {
       // Imported from another user - Increment import count
-      this.incrementRosterImportCount(sourceRosterId)
+      await this.incrementRosterImportCount(sourceRosterId)
     } else {
       // Self-clone - Set a name for the roster
-      newRosterRow.rosterName + ' - Copy'
+      newRosterRow.rosterName = `${newRosterRow.rosterName} - Copy`
     }
 
     // Now create the roster and its ops
@@ -225,7 +237,7 @@ export class RosterService {
     }
     
     // Create all the ops
-    for(const op of newRoster.ops) {
+    for (const op of (newRoster.ops ?? [])) {
       const opRow = {
         opId: op.opId,
         rosterId: createdRoster.rosterId,
@@ -276,11 +288,11 @@ export class RosterService {
     return updatedRoster
   }
 
-  static async incrementRosterViewCount(rosterId) {
+  static async incrementRosterViewCount(rosterId: string): Promise<void> {
     await this.repository.incrementRosterViewCount(rosterId)
   }
 
-  static async incrementRosterImportCount(rosterId) {
+  static async incrementRosterImportCount(rosterId: string): Promise<void> {
     await this.repository.incrementRosterImportCount(rosterId)
   }
 }

@@ -1,5 +1,5 @@
 import { getAuthSession } from '@/lib/auth'
-import { OpService, RosterService } from '@/src/services'
+import { OpService, RosterService } from '@/services'
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {

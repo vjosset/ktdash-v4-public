@@ -4,10 +4,10 @@ import RosterCard from '@/components/roster/RosterCard'
 import { authOptions } from '@/lib/auth'
 import { GAME } from '@/lib/config/game_config'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
-import news from '@/public/news.json'
+import rawNews from '@public/news.json'
 import { RosterService } from '@/services'
 import { KillteamService } from '@/services/killteam.service'
-import NewsCard from '@/src/components/home/NewsCard'
+import NewsCard from '@/components/home/NewsCard'
 import { getServerSession } from "next-auth"
 import Link from 'next/link'
 
@@ -30,6 +30,10 @@ export default async function Home() {
   const killteams =  await KillteamService.getAllKillteams()
 
   const randomSpotlight =  await RosterService.getRandomSpotlight()
+
+  // Type the imported news JSON
+  type NewsItem = { date: string; title: string; description: string }
+  const news = rawNews as NewsItem[]
 
   return (
     <>

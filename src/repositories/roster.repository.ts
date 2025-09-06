@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { Roster } from '@prisma/client';
 import { BaseRepository } from './base.repository';
 

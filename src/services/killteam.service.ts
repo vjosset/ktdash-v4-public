@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { KillteamRepository } from '@/src/repositories/killteam.repository'
+import { KillteamRepository } from '@/repositories/killteam.repository'
 import { Killteam } from '@/types'
 
 export class KillteamService {

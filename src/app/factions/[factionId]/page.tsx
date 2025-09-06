@@ -2,7 +2,7 @@ import KillteamCard from '@/components/killteam/KillteamCard'
 import Markdown from '@/components/ui/Markdown'
 import PageTitle from '@/components/ui/PageTitle'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
-import { FactionService } from '@/src/services'
+import { FactionService } from '@/services'
 import { notFound } from 'next/navigation'
 
 export async function generateMetadata({ params }: { params: Promise<{ factionId: string }>  }) {
@@ -56,4 +56,3 @@ export default async function FactionPage({ params }: { params: Promise<{ factio
     </div>
   )
 }
-  

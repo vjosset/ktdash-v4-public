@@ -3,7 +3,7 @@ import { GAME } from '@/lib/config/game_config'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
 import { getRosterPortraitUrl } from '@/lib/utils/imageUrls'
 import { UserService } from '@/services'
-import { getAuthSession } from '@/src/lib/auth'
+import { getAuthSession } from '@/lib/auth'
 import { notFound } from 'next/navigation'
 import UserPageClient from './UserPageClient'
 export const revalidate = 60

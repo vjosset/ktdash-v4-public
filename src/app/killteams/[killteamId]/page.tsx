@@ -2,8 +2,8 @@ import { UserLink } from '@/components/shared/Links'
 import Markdown from '@/components/ui/Markdown'
 import PageTitle from '@/components/ui/PageTitle'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
+import { KillteamService } from '@/services'
 import { WeaponRuleService } from '@/services/weaponRule.service'
-import { KillteamService } from '@/src/services'
 import { notFound } from 'next/navigation'
 import KillteamPageClient from './KillteamPageClient'
 
@@ -85,4 +85,3 @@ export default async function KillteamPage({ params }: { params: Promise<{ killt
     </div>
   )
 }
-  

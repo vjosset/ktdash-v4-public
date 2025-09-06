@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { WeaponRuleRepository } from '@/repositories/weaponRule.repository'
 import { WeaponRule } from '@/types/weaponRule.model'
 

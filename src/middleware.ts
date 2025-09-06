@@ -26,7 +26,7 @@ export async function middleware(req: NextRequest) {
     const rosterId = match[1]
     const url = req.nextUrl.clone()
     url.pathname = `/rosters/${rosterId}`
-    url.searchParams.set('gallery', '1')
+    url.searchParams.set('tab', 'gallery')
     return NextResponse.rewrite(url)
   }
 
