@@ -2,6 +2,7 @@
 
 import KillteamCard from '@/components/killteam/KillteamCard'
 import { Button } from '@/components/ui'
+import UserBattlesTab from '@/components/user/UserBattlesTab'
 import AddRosterForm from '@/src/components/roster/AddRosterForm'
 import RosterCard from '@/src/components/roster/RosterCard'
 import { UserPlain } from '@/types'
@@ -14,9 +15,10 @@ interface UserPageClientProps {
   user: UserPlain
   isOwner: boolean
   userName: string
+  hasMatchResults?: boolean
 }
 
-export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
+export default function UserPageClient({ user, isOwner, hasMatchResults = false }: UserPageClientProps) {
   const [rosters, setRosters] = useState(user.rosters)
   const router = useRouter()
 
@@ -24,7 +26,7 @@ export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
     setRosters((currentRosters) => currentRosters?.filter((roster) => roster.rosterId !== rosterId))
   }
 
-  const validTabs = ['rosters', 'killteams'] as const
+  const validTabs = ['rosters', 'battles', 'killteams'] as const
   type Tab = (typeof validTabs)[number]
 
   const [tab, setTab] = useState<Tab>('rosters')
@@ -32,6 +34,9 @@ export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
   const isHomebrewTeam = (killteam: any) => ((killteam as any).isHomebrew ?? killteam.factionId === 'HBR')
   const userHomebrewKillteams = (user.killteams || []).filter(isHomebrewTeam)
   const hasHomebrew = userHomebrewKillteams.length > 0
+  const battlesEnabled = process.env.NEXT_PUBLIC_FEATURE_BATTLES === 'true'
+  const showBattlesTab = battlesEnabled && hasMatchResults
+  const showTabBar = showBattlesTab || hasHomebrew
   const canCreateHomebrew = isOwner
   const homebrewLimitReached = userHomebrewKillteams.length >= 10
 
@@ -119,31 +124,38 @@ export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
 
   return (
     <div>
-      {!hasHomebrew && isOwner && (
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+      {!showTabBar && isOwner && (
+        <div className="flex flex-wrap justify-center gap-2 mb-4">
           <AddRosterForm />
           {renderHomebrewButton()}
         </div>
       )}
 
-      {hasHomebrew && (
+      {showTabBar && (
         <div className="overflow-x-auto px-2">
-          {/* Tabs */}
           <div className="flex justify-center space-x-2 border-b border-border mb-4 min-w-max">
             <button className={tabClasses(tab === 'rosters')} onClick={() => handleTabChange('rosters')}>
               Rosters
             </button>
-            <button className={tabClasses(tab === 'killteams')} onClick={() => handleTabChange('killteams')}>
-              Homebrew
-            </button>
+            {showBattlesTab && (
+              <button className={tabClasses(tab === 'battles')} onClick={() => handleTabChange('battles')}>
+                Battles
+              </button>
+            )}
+            {hasHomebrew && (
+              <button className={tabClasses(tab === 'killteams')} onClick={() => handleTabChange('killteams')}>
+                Homebrew
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      <div key="rostersTab" className={!hasHomebrew || tab === 'rosters' ? 'block' : 'hidden'}>
-        {hasHomebrew && isOwner && (
-          <div className="flex justify-center mb-4">
+      <div key="rostersTab" className={!showTabBar || tab === 'rosters' ? 'block' : 'hidden'}>
+        {showTabBar && isOwner && (
+          <div className="flex flex-wrap justify-center gap-2 mb-4">
             <AddRosterForm />
+            {!hasHomebrew && renderHomebrewButton()}
           </div>
         )}
         <div className="gap-1 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -163,6 +175,12 @@ export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
           ))}
         </div>
       </div>
+
+      {showBattlesTab && (
+        <div key="battlesTab" className={tab === 'battles' ? 'block' : 'hidden'}>
+          <UserBattlesTab userId={user.userId} isOwner={isOwner} />
+        </div>
+      )}
 
       {hasHomebrew && (
         <div key="killteamsTab" className={tab === 'killteams' ? 'block' : 'hidden'}>

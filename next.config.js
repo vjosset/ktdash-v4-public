@@ -8,7 +8,7 @@ const nextConfig = {
     return [
       // Roster page pretty tab paths → same page with a tab query (your current code already reads it)
       {
-        source: '/rosters/:id/:tab(operatives|equipment|ploys|ops|gallery)',
+        source: '/rosters/:id/:tab(operatives|equipment|ploys|ops|gallery|battles)',
         destination: '/rosters/:id?tab=:tab',
       },
       

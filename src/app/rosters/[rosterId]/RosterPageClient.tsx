@@ -1,6 +1,7 @@
 'use client'
 
 import AddOpForm from '@/components/op/AddOpForm';
+import BattlesTab from '@/components/roster/BattlesTab';
 import OpCard from '@/components/op/OpCard';
 import EditRosterForm from '@/components/roster/EditRosterForm';
 import RosterCardMenu from '@/components/roster/RosterCardMenu';
@@ -33,15 +34,17 @@ import { toast } from 'sonner';
 export default function RosterPageClient({
   initialRoster,
   isOwner,
+  hasMatchResults = false,
 }: {
   initialRoster: RosterPlain
   isOwner: boolean
+  hasMatchResults?: boolean
 }) {
   const router = useRouter()
   const { data: session, status } = useSession()
 
   // Get ?tab= value from the URL
-  const validTabs = ['operatives', 'equipment', 'ploys', 'ops', 'gallery'] as const
+  const validTabs = ['operatives', 'equipment', 'ploys', 'ops', 'gallery', 'battles'] as const
   type Tab = typeof validTabs[number]
 
   const pathname = usePathname()
@@ -346,6 +349,10 @@ export default function RosterPageClient({
   }
   roster.ops?.filter(op => op.hasCustomPortrait).map(op => op.hasCustomPortrait && carouselItems.push({title: op.opName, imageUrl: `${getOpPortraitUrl(op.opId)}?v=${toEpochMs(op.portraitUpdatedAt)}`}));
 
+  const battlesEnabled = process.env.NEXT_PUBLIC_FEATURE_BATTLES === 'true'
+  const showBattlesTab = battlesEnabled && (isOwner || hasMatchResults)
+  const showTabBar = isOwner || showBattlesTab || carouselItems.length > 0
+
   const handlePortraitClick = (clickedUrl: string) => {
     const index = carouselItems.findIndex(item => item.imageUrl === clickedUrl);
     console.log("  Found at index", index)
@@ -547,9 +554,8 @@ export default function RosterPageClient({
         </div>
       )}
       <div className="max-w-7xl mx-auto print:max-w-none">
-        {/* Tabs  */}
-        {(isOwner || (carouselItems.length > 0)) && (
-          <div className="overflow-x-auto px-2 noprint">
+        {/* Tabs */}
+        {showTabBar && <div className="overflow-x-auto px-2 noprint">
             <div className="flex justify-center space-x-2 border-b border-border mb-4">
               <button className={tabClasses(tab === 'operatives')} onClick={() => handleTabChange('operatives')}>
                 Operatives
@@ -574,10 +580,14 @@ export default function RosterPageClient({
                   Gallery
                 </button>
               }
+              {showBattlesTab && (
+                <button className={tabClasses(tab === 'battles')} onClick={() => handleTabChange('battles')}>
+                  Battles
+                </button>
+              )}
             </div>
-          </div>
-        )}
-        
+          </div>}
+
         {/* Tab Content */}
         <div className="leading-relaxed px-1">
           {/* Operatives */}
@@ -689,6 +699,16 @@ export default function RosterPageClient({
             <div>
               <RosterOps roster={roster} onRosterUpdate={(updated) => setRoster(updated)} />
             </div>
+          )}
+
+          {/* Battles */}
+          {showBattlesTab && tab === 'battles' && (
+            <BattlesTab
+              rosterId={roster.rosterId}
+              rosterName={roster.rosterName}
+              isOwner={isOwner}
+              userId={session?.user?.userId ?? ''}
+            />
           )}
 
           {/* Gallery */}

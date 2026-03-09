@@ -1,4 +1,5 @@
 export * from './ability.model'
+export * from './matchResult.model'
 export * from './equipment.model'
 export * from './faction.model'
 export * from './killteam.model'

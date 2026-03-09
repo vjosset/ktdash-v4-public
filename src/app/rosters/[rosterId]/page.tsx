@@ -2,6 +2,7 @@ import { getAuthSession } from '@/lib/auth'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
 import { getOpPortraitUrl, getRosterPortraitUrl, toEpochMs } from '@/lib/utils/imageUrls'
 import { RosterService } from '@/services'
+import { MatchResultService } from '@/services/matchResult.service'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import RosterPageClient from './RosterPageClient'
@@ -61,9 +62,14 @@ export default async function RosterPage({ params }: { params: Promise<{ rosterI
     RosterService.incrementRosterViewCount(rosterId)
   }
 
+  const battlesEnabled = process.env.NEXT_PUBLIC_FEATURE_BATTLES === 'true'
+  const hasMatchResults = battlesEnabled && !isOwner
+    ? await MatchResultService.hasConfirmedMatchResults(rosterId)
+    : false
+
   return (
     <div className="mx-auto">
-      <RosterPageClient initialRoster={roster.toPlain()} isOwner={isOwner} />
+      <RosterPageClient initialRoster={roster.toPlain()} isOwner={isOwner} hasMatchResults={hasMatchResults} />
     </div>
   )
 }

@@ -13,6 +13,7 @@ model User {
   userName  String   @unique @db.VarChar(250)
   password  String   @db.VarChar(250)
   createdAt DateTime @default(now())
+  eloRating Float    @default(1000)
 
   rosters   Roster[]
   killteams Killteam[]
@@ -61,6 +62,7 @@ model Killteam {
   userId          String? @db.VarChar(20)
   isPublished     Boolean @default(true)
   defaultRosterId String? @unique @db.VarChar(20)
+  eloRating       Float   @default(1000)
 
   faction       Faction?       @relation(fields: [factionId], references: [factionId])
   user          User?          @relation(fields: [userId], references: [userId])
@@ -155,13 +157,16 @@ model Roster {
   portraitUpdatedAt DateTime @default(now())
   eqIds             String   @default("")
   ployIds           String   @default("")
+  eloRating         Float    @default(1000)
 
   ops                Op[]
   user               User?     @relation(fields: [userId], references: [userId], onDelete: Cascade)
   // Back-reference for rosters collection on Killteam
   killteam           Killteam? @relation("RosterBelongsToKillteam", fields: [killteamId], references: [killteamId], onDelete: Cascade)
   // Back-reference for defaultRoster on Killteam
-  defaultForKillteam Killteam? @relation("KillteamDefaultRoster")
+  defaultForKillteam Killteam?     @relation("KillteamDefaultRoster")
+  matchesAsA         MatchResult[] @relation("MatchRosterA")
+  matchesAsB         MatchResult[] @relation("MatchRosterB")
 }
 
 model Op {
@@ -232,4 +237,24 @@ model KillteamVote {
   user     User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([killteamId, userId], map: "IX_KillteamVote_UserPerTeam")
+}
+
+model MatchResult {
+  matchResultId    Int      @id @default(autoincrement())
+  rosterAId        String   @db.VarChar(20)
+  rosterBId        String   @db.VarChar(20)
+  result           String   @db.VarChar(1)
+  rosterAConfirmed Boolean  @default(true)
+  rosterBConfirmed Boolean  @default(false)
+  matchDate        DateTime @default(now())
+  eloBeforeA       Float?
+  eloBeforeB       Float?
+  eloAfterA        Float?
+  eloAfterB        Float?
+
+  rosterA Roster @relation("MatchRosterA", fields: [rosterAId], references: [rosterId], onDelete: Cascade)
+  rosterB Roster @relation("MatchRosterB", fields: [rosterBId], references: [rosterId], onDelete: Cascade)
+
+  @@index([rosterAId], name: "IX_MatchResult_RosterA")
+  @@index([rosterBId], name: "IX_MatchResult_RosterB")
 }

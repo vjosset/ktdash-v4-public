@@ -22,6 +22,7 @@ export type KillteamPlain = {
   isPublished?: boolean
   defaultRosterId?: string | null
   isHomebrew: boolean
+  eloRating?: number
   user?: UserPlain | null
   defaultRoster?: RosterPlain | null
   rosterCount?: number
@@ -43,6 +44,7 @@ export class Killteam {
   userId?: string
   defaultRosterId?: string | null
   isPublished?: boolean
+  eloRating?: number
   user?: User | null
   defaultRoster?: Roster | null
   rosterCount: number
@@ -63,6 +65,7 @@ export class Killteam {
     userId?: string
     defaultRosterId?: string | null
     isPublished?: boolean
+    eloRating?: number
     user?: User | null
     defaultRoster?: Roster | null
     rosterCount?: number
@@ -83,6 +86,7 @@ export class Killteam {
     this.defaultRoster = data.defaultRoster ? (data.defaultRoster instanceof Roster ? data.defaultRoster : new Roster(data.defaultRoster)) : null
     this.userId = data.userId
     this.isPublished = data.isPublished ?? true
+    this.eloRating = data.eloRating
     this.user = data.user ? (data.user instanceof User ? data.user : new User(data.user)) : null
     this.opTypes = data.opTypes?.map(opType => opType instanceof OpType ? opType : new OpType(opType))
     this.ploys = data.ploys?.map(ploy => ploy instanceof Ploy ? ploy : new Ploy(ploy))
@@ -117,6 +121,7 @@ export class Killteam {
       defaultRoster: this.defaultRoster?.toPlain() ?? null,
       userId: this.userId,
       isPublished: this.isPublished,
+      eloRating: this.eloRating,
       user: this.user?.toPlain(),
       isHomebrew: this.isHomebrew,
       rosterCount: this.rosterCount,

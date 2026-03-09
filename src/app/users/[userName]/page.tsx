@@ -3,6 +3,7 @@ import { GAME } from '@/lib/config/game_config'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
 import { getRosterPortraitUrl } from '@/lib/utils/imageUrls'
 import { UserService } from '@/services'
+import { MatchResultService } from '@/services/matchResult.service'
 import { getAuthSession } from '@/src/lib/auth'
 import { notFound } from 'next/navigation'
 import UserPageClient from './UserPageClient'
@@ -57,6 +58,12 @@ export default async function UserPage({ params }: { params: Promise<{ userName:
 
   const isOwner = session?.user?.userId === user.userId
 
+  const battlesEnabled = process.env.NEXT_PUBLIC_FEATURE_BATTLES === 'true'
+  // Owners see the tab if they have any battle (confirmed or pending); others only if confirmed exist
+  const hasMatchResults = battlesEnabled
+    ? await MatchResultService.hasMatchResultsForUser(user.userId, !isOwner)
+    : false
+
   return (
     <div className="px-1 py-8 max-w-7xl mx-auto">
       <div className="text-center mb-8">
@@ -64,11 +71,12 @@ export default async function UserPage({ params }: { params: Promise<{ userName:
           {user.userName}
         </PageTitle>
       </div>
-      
-      <UserPageClient 
+
+      <UserPageClient
         user={user.toPlain()}
         isOwner={isOwner}
         userName={user.userName}
+        hasMatchResults={hasMatchResults}
       />
     </div>
   )
