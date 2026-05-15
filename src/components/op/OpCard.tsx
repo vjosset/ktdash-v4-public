@@ -1,5 +1,6 @@
 'use client'
 
+import { useLocalSettings } from '@/hooks/useLocalSettings'
 import { getOpPortraitUrl, toEpochMs } from '@/lib/utils/imageUrls'
 import { showInfoModal } from '@/lib/utils/showInfoModal'
 import { getOpTypeUniqueAbilitiesAndOptions, getOpUniqueAbilitiesAndOptions, getShortOpTypeName } from '@/lib/utils/utils'
@@ -16,7 +17,6 @@ import { Button, Modal } from '../ui'
 import Markdown from '../ui/Markdown'
 import OpCardMenu from './OpCardMenu'
 import OpEditorModal from './OpEditorModal'
-import { useLocalSettings } from '@/hooks/useLocalSettings'
 
 type OpCardProps = {
   op: OpPlain | OpTypePlain
@@ -169,7 +169,7 @@ export default function OpCard({
   return (
     <>
       <div className={cardClassName}>
-        <div className={`grid grid-cols-4 gap-1 text-center`}>
+        <div className={'grid grid-cols-4 gap-1 text-center'}>
           {showPortrait && (
             <div className="cursor-pointer col-span-1 border border-muted/50 rounded-md" style={{maxHeight: '100%', maxWidth: '100%', overflow: 'hidden'}} onClick={() => !op.isOpType && onPortraitClick && onPortraitClick(op.opId)}>
               <img
@@ -177,16 +177,16 @@ export default function OpCard({
                 src={`${getOpPortraitUrl(op.opId)}?v=${toEpochMs(op.portraitUpdatedAt)}`}
                 loading="lazy"
                 decoding="async"
-                />
+              />
             </div>
           )}
           <div className={showPortrait ? 'col-span-3' : 'col-span-4'}>
             {/* Name and Type */}
             <div className="flex justify-between">
-              <div className="flex justify-between gap-x-2 text-left">
+              <div className="flex justify-between gap-x-2 text-left overflow-hidden">
                 {/* Order */}
                 {!op.isOpType && op.currWOUNDS !== 0 && op.isDeployed && (
-                  <button className="noprint" onClick={() => isOwner && setShowOrderModal(true)} >
+                  <button className="noprint flex-shrink-0" onClick={() => isOwner && setShowOrderModal(true)} >
                     <img
                       className='w-6 h-6'
                       alt={`${op.opOrder} - ` + (op.isActivated ? 'Activated' : 'Ready')}
@@ -194,12 +194,11 @@ export default function OpCard({
                       src={`/icons/${op.opOrder}${op.isActivated ? 'White' : 'Orange'}.png`}
                       loading="lazy"
                       decoding="async"
-                      />
+                    />
                   </button>
                 )}
                 {/* Name */}
-                <h5 className={`font-heading ${isOwner ? 'cursor-pointer' : ''} flex items-center gap-1 ${!op.isOpType && (op.currWOUNDS == 0 || !op.isDeployed) ? 'text-muted' : ''}`}
-                   onClick={() => setIsCollapsed(!isCollapsed)}>
+                <h5 className={`font-heading truncate ${isOwner ? 'cursor-pointer' : ''} flex items-center gap-1 ${!op.isOpType && (op.currWOUNDS == 0 || !op.isDeployed) ? 'text-muted' : ''}`} onClick={() => setIsCollapsed(!isCollapsed)}>
                   {!op.isOpType && op.isDeployed && (
                     <>{seq}. </>
                   )}
@@ -207,7 +206,7 @@ export default function OpCard({
                     <FiPause />
                   )}
 
-                  {primaryName || ''}
+                  <span className="truncate">{primaryName || ''}</span>
                   {!op.isOpType && op.currWOUNDS < (op.WOUNDS / 2) && op.currWOUNDS > 0 && (
                     <FaHeartPulse className="text-base text-muted" /> 
                   )}
@@ -243,7 +242,7 @@ export default function OpCard({
                 {secondaryName}
               </div>
             )}
-            <div className={`grid grid-cols-4 gap-1 text-center`}>
+            <div className={'grid grid-cols-4 gap-1 text-center'}>
               <h6 className="stat">A <span className="stat text-main text-2xl">{op.APL}</span></h6>
               <h6 className="stat">M <span className="stat text-main text-2xl">{op.MOVE}</span></h6>
               <h6 className="stat">S <span className="stat text-main text-2xl">{op.SAVE}</span></h6>
