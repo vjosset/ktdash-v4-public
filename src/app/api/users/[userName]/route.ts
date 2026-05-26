@@ -31,12 +31,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ userNa
   const body = await req.json()
 
   // Allowlist of user-editable fields
-  const allowed = ['isPrivate'] as const
-  type AllowedKey = typeof allowed[number]
-  const updates: Partial<Record<AllowedKey, unknown>> = {}
-  for (const key of allowed) {
-    if (key in body) updates[key] = body[key]
-  }
+  const updates: { isPrivate?: boolean } = {}
+  if (typeof body.isPrivate === 'boolean') updates.isPrivate = body.isPrivate
 
   if (Object.keys(updates).length === 0) {
     return new NextResponse('No valid fields to update', { status: 400 })
