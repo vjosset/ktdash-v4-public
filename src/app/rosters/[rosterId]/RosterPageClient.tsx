@@ -710,10 +710,17 @@ export default function RosterPageClient({
           {/* Gallery */}
           <div className={tab === 'gallery' ? 'block' : 'hidden'}>
             {session?.user?.userId == 'vince' && (
-              <div className={`flex items-center gap-2 cursor-pointer ${roster.isSpotlight ? 'text-main' : 'text-muted'}`} onClick={() => toggleSpotlight(roster.rosterId)}>
-                <Checkbox checked={roster.isSpotlight} onChange={() => {}} /* Handled by parent container*/ />
-                <FiStar /> Spotlight {roster.isSpotlight ? 'On' : 'Off'}
-              </div>
+              roster.user?.isPrivate ? (
+                <div className="flex items-center gap-2 text-muted cursor-not-allowed" title="User has set their rosters to private">
+                  <Checkbox checked={false} onChange={() => {}} disabled />
+                  <FiStar /> Spotlight Off (user is private)
+                </div>
+              ) : (
+                <div className={`flex items-center gap-2 cursor-pointer ${roster.isSpotlight ? 'text-main' : 'text-muted'}`} onClick={() => toggleSpotlight(roster.rosterId)}>
+                  <Checkbox checked={roster.isSpotlight} onChange={() => {}} /* Handled by parent container*/ />
+                  <FiStar /> Spotlight {roster.isSpotlight ? 'On' : 'Off'}
+                </div>
+              )
             )}
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {carouselItems.map((img) => {

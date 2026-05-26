@@ -3,7 +3,7 @@
 import { format } from 'date-fns'
 import { useCallback, useEffect, useState } from 'react'
 import { FaBolt, FaUsers } from 'react-icons/fa6'
-import { FiCheck, FiRotateCw, FiStar } from 'react-icons/fi'
+import { FiCheck, FiLock, FiRotateCw, FiStar } from 'react-icons/fi'
 import { RosterLink, UserLink } from '../shared/Links'
 import { SectionTitle } from '../ui'
 import Button from '../ui/Button'
@@ -117,15 +117,14 @@ export default function AdminTools() {
             <div key={e.rosterId}>
               <h6>{format(new Date(e.latestEventAt), 'yyyy-MM-dd HH:mm')}</h6>
               <div key={e.rosterId} className="flex items-center gap-2 text-sm">
-                {e.isSpotlight && (
-                  <FiStar className={`text-main ${e.isSpotlight ? '' : 'invisible'} `} />
-                )}
-                {!e.isSpotlight && e.isComplete && (
-                  <FiCheck />
-                )}
-                {!e.isSpotlight && !e.isComplete && (
-                  <FiStar className={`text-main ${e.isSpotlight ? '' : 'invisible'} `} />
-                )}
+                {e.isPrivate
+                  ? <FiLock className="text-muted" title="User has set their rosters to private" />
+                  : e.isSpotlight
+                    ? <FiStar className="text-main" />
+                    : e.isComplete
+                      ? <FiCheck />
+                      : <FiStar className="invisible" />
+                }
                 <RosterLink rosterId={e.rosterId} rosterName={e.rosterName} toGallery={true} newTab={true} />
                 {' by '}
                 <UserLink userName={e.userName} newTab={true} />

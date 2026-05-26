@@ -186,7 +186,7 @@ export async function GET() {
         select: { opId: true, hasCustomPortrait: true }
       },
       user: {
-        select: { userName: true }
+        select: { userName: true, isPrivate: true }
       },
       killteam: {
         select: { killteamName: true }
@@ -205,6 +205,7 @@ export async function GET() {
       rosterName: r.rosterName,
       isSpotlight: r.isSpotlight,
       userName: r.user?.userName ?? 'Unknown',
+      isPrivate: r.user?.isPrivate ?? false,
       killteamName: r.killteam?.killteamName ?? 'Unknown',
       hasCustomPortrait: r.hasCustomPortrait,
       totalOps,
