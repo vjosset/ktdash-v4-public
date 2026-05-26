@@ -1,14 +1,13 @@
 import { UserLink } from '@/components/shared/Links'
 import Markdown from '@/components/ui/Markdown'
 import PageTitle from '@/components/ui/PageTitle'
-import { GAME } from '@/lib/config/game_config'
 import { authOptions } from '@/lib/auth'
+import { GAME } from '@/lib/config/game_config'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
-import { WeaponRuleService } from '@/services/weaponRule.service'
 import { KillteamService } from '@/src/services'
+import { getServerSession } from 'next-auth'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getServerSession } from 'next-auth'
 import { QRCodeSVG } from 'qrcode.react'
 import KillteamPageClient from './KillteamPageClient'
 
@@ -39,8 +38,6 @@ export default async function KillteamPage({ params }: { params: Promise<{ killt
   const killteam = await KillteamService.getKillteam(killteamId, { userId: session?.user?.userId })
 
   if (!killteam) notFound()
-    
-  const allWeaponRules = await WeaponRuleService.getAllWeaponRules()
 
   return (
     <div className="max-w-full">
@@ -71,7 +68,7 @@ export default async function KillteamPage({ params }: { params: Promise<{ killt
           <div className="flex items-center flex-wrap justify-center gap-2 text-muted-foreground text-sm mt-2">
             {killteam.isHomebrew && (
               <div className="min-w-0 text-sm text-muted">
-                Homebrew
+                Homebrew {killteam.isHomebrew && !killteam.isPublished && (' (Unpublished)')}
                 {killteam.user && (
                   <> by <UserLink userName={killteam.user.userName ?? 'Unknown'} /></>
                 )}

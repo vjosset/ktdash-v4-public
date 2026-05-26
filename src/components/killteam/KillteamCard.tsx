@@ -76,7 +76,6 @@ export default function KillteamCard({ killteam }: KillteamCardProps) {
   }, [killteam.killteamId, killteam.isHomebrew, session?.user, userVote, isSubmitting])
 
   const ratio = voteSummary.total > 0 ? Math.round((voteSummary.ratio ?? 0) * 100) : 0
-  const totalLabel = `${voteSummary.total} vote${voteSummary.total === 1 ? '' : 's'}`
 
   return (
     <div className="group grid grid-cols-[120px_1fr] md:grid-cols-[150px_1fr] bg-card border border-border rounded overflow-hidden hover:border-main transition min-h-[110px]">
@@ -113,20 +112,23 @@ export default function KillteamCard({ killteam }: KillteamCardProps) {
             <div className="truncate min-w-0 text-sm text-muted flex items-center gap-1.5">
               <div>
                 Homebrew
+                {killteam.isHomebrew && !killteam.isPublished && (' (Unpublished)')}
                 {killteam.user && (
                   <> by <UserLink userName={killteam.user.userName ?? 'Unknown'} /></>
                 )}
               </div>
-              <div className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
-                {`${killteam.rosterCount ?? 0} Roster${(killteam.rosterCount ?? 0) === 1 ? '' : 's'}`}
-              </div>
+              {killteam.user && killteam.isPublished && (
+                <div className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
+                  {`${killteam.rosterCount ?? 0} Roster${(killteam.rosterCount ?? 0) === 1 ? '' : 's'}`}
+                </div>
+              )}
             </div>
           )}
           <Markdown className={clsx('text-sm leading-tight', killteam.isHomebrew ? 'line-clamp-1' : 'line-clamp-3')}>
             {killteam.description}
           </Markdown>
         </div>
-        {killteam.isHomebrew && (
+        {killteam.isHomebrew && killteam.isPublished && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
             <div className="flex flex-col">
               <span className="text-muted">
