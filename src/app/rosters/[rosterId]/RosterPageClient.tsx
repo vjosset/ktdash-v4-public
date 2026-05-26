@@ -1,35 +1,36 @@
 'use client'
 
-import AddOpForm from '@/components/op/AddOpForm';
-import OpCard from '@/components/op/OpCard';
-import EditRosterForm from '@/components/roster/EditRosterForm';
-import RosterCardMenu from '@/components/roster/RosterCardMenu';
-import RosterEquipment from '@/components/roster/RosterEquipment';
-import RosterOps from '@/components/roster/RosterOps';
-import RosterPloys from '@/components/roster/RosterPloys';
-import { badgeClass, KillteamLink, UserLink } from '@/components/shared/Links';
-import { Button, Checkbox, Modal } from '@/components/ui';
-import CarouselModal, { CarouselItem } from '@/components/ui/CarouselModal';
-import Markdown from '@/components/ui/Markdown';
-import PageTitle from '@/components/ui/PageTitle';
-import { GAME } from '@/lib/config/game_config';
-import { getSetting } from '@/lib/settings';
-import { getOpPortraitUrl, getRosterPortraitUrl, toEpochMs } from '@/lib/utils/imageUrls';
-import { TacOps, TacOps2024 } from '@/lib/utils/operations';
-import { showInfoModal } from '@/lib/utils/showInfoModal';
-import { getRosterRepeatedAbilitiesAndOptions } from '@/lib/utils/utils';
-import { WeaponRule } from '@/lib/utils/weaponRules';
-import { OpPlain, RosterPlain } from '@/types';
-import { Menu, MenuButton } from '@headlessui/react';
-import clsx from 'clsx';
-import { useSession } from 'next-auth/react';
-import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { QRCodeSVG } from 'qrcode.react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { FiDownload, FiInfo, FiList, FiMoreVertical, FiPrinter, FiRotateCcw, FiStar } from 'react-icons/fi';
-import { toast } from 'sonner';
-import OpponentTab from './OpponentTab';
+import AddOpForm from '@/components/op/AddOpForm'
+import OpCard from '@/components/op/OpCard'
+import EditRosterForm from '@/components/roster/EditRosterForm'
+import RosterCardMenu from '@/components/roster/RosterCardMenu'
+import RosterEquipment from '@/components/roster/RosterEquipment'
+import RosterOps from '@/components/roster/RosterOps'
+import RosterPloys from '@/components/roster/RosterPloys'
+import { badgeClass, KillteamLink, UserLink } from '@/components/shared/Links'
+import { Button, Checkbox, Modal } from '@/components/ui'
+import CarouselModal, { CarouselItem } from '@/components/ui/CarouselModal'
+import Markdown from '@/components/ui/Markdown'
+import PageTitle from '@/components/ui/PageTitle'
+import { GAME } from '@/lib/config/game_config'
+import { getSetting } from '@/lib/settings'
+import { getOpPortraitUrl, getRosterPortraitUrl, toEpochMs } from '@/lib/utils/imageUrls'
+import { TacOps, TacOps2024 } from '@/lib/utils/operations'
+import { showInfoModal } from '@/lib/utils/showInfoModal'
+import { getRosterRepeatedAbilitiesAndOptions } from '@/lib/utils/utils'
+import { WeaponRule } from '@/lib/utils/weaponRules'
+import { OpPlain, RosterPlain } from '@/types'
+import { Menu, MenuButton } from '@headlessui/react'
+import clsx from 'clsx'
+import { useSession } from 'next-auth/react'
+import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { QRCodeSVG } from 'qrcode.react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { FaPencil } from 'react-icons/fa6'
+import { FiDownload, FiInfo, FiList, FiMoreVertical, FiPrinter, FiRotateCcw, FiStar } from 'react-icons/fi'
+import { toast } from 'sonner'
+import OpponentTab from './OpponentTab'
 
 export default function RosterPageClient({
   initialRoster,
@@ -83,9 +84,9 @@ export default function RosterPageClient({
   const formRef = useRef<{ handleSubmit: () => void }>(null)
   const [showResetModal, setShowResetModal] = useState<Boolean>(false)
   const [showEditRosterModal, setShowEditRosterModal] = useState<Boolean>(false)
-  const [carouselIsOpen, setCarouselIsOpen] = useState(false);
-  const [carouselStartIndex, setCarouselStartIndex] = useState(0);
-  const [showDeploymentModal, setShowDeploymentModal] = useState(false);
+  const [carouselIsOpen, setCarouselIsOpen] = useState(false)
+  const [carouselStartIndex, setCarouselStartIndex] = useState(0)
+  const [showDeploymentModal, setShowDeploymentModal] = useState(false)
   
   // For printing
   // Get operative unique abilities and options
@@ -112,7 +113,7 @@ export default function RosterPageClient({
   const rosterTotalWounds = useMemo(
     () => ops.reduce((sum, op) => sum + (op.opType?.WOUNDS ?? 0), 0),
     [ops]
-  );
+  )
   
   const openCarousel = () => {
     setCarouselIsOpen(true)
@@ -159,7 +160,7 @@ export default function RosterPageClient({
     const nextTab = validTabs.includes(last as Tab) ? (last as Tab) : 'operatives'
     if (nextTab !== tab) setTab(nextTab)
     
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [pathname, searchParams])  // keep deps as pathname + searchParams
 
   const updateOp = (updated: OpPlain) => {
@@ -229,7 +230,7 @@ export default function RosterPageClient({
   const handleResetClick = () => { setShowResetModal(true)}
 
   const handleRosterPrint = () => {
-    window.print();
+    window.print()
   }
 
   const handleEditRosterClick = () => { setShowEditRosterModal(true)}
@@ -344,15 +345,15 @@ export default function RosterPageClient({
     }
   }
 
-  const carouselItems: CarouselItem[] = [];
+  const carouselItems: CarouselItem[] = []
   if (roster.hasCustomPortrait) {
     carouselItems.push({title: roster.rosterName, imageUrl: `${getRosterPortraitUrl(roster.rosterId)}?v=${toEpochMs(roster.portraitUpdatedAt)}` })
   }
-  roster.ops?.filter(op => op.hasCustomPortrait).map(op => op.hasCustomPortrait && carouselItems.push({title: op.opName, imageUrl: `${getOpPortraitUrl(op.opId)}?v=${toEpochMs(op.portraitUpdatedAt)}`}));
+  roster.ops?.filter(op => op.hasCustomPortrait).map(op => op.hasCustomPortrait && carouselItems.push({title: op.opName, imageUrl: `${getOpPortraitUrl(op.opId)}?v=${toEpochMs(op.portraitUpdatedAt)}`}))
 
   const handlePortraitClick = (clickedUrl: string) => {
-    const index = carouselItems.findIndex(item => item.imageUrl === clickedUrl);
-    console.log("  Found at index", index)
+    const index = carouselItems.findIndex(item => item.imageUrl === clickedUrl)
+    console.log('  Found at index', index)
     if (index >= 0) {
       setCarouselStartIndex(index)
       openCarousel()
@@ -383,7 +384,7 @@ export default function RosterPageClient({
         <div className="relative z-10 flex flex-col items-center justify-end text-center h-full pt-28 md:pt-20 pb-6 px-4 print:pt-1 print:pb-1">
           <div className="cursor-pointer flex items-center gap-2">
             <PageTitle onClick={isOwner && handleEditRosterClick}>
-              {roster.rosterName}
+              {roster.rosterName} {isOwner && (<sup><FaPencil className="inline text-xs" /></sup>)}
             </PageTitle>
           </div>
 
@@ -522,32 +523,32 @@ export default function RosterPageClient({
               </div>
             </div>
           ))}
-            <div className="flex flex-col items-center gap-1">
-              <h6 className="font-bold text-main invisible">1</h6>
-              <div key="resetEditRoster" className="flex items-center">
-                <div className="flex gap-2 items-center justify-center">
-                  <button
-                    className="flex items-center justify-center rounded border border-border w-6 h-6 text-lg"
-                    onClick={handleResetClick}
-                  >
-                    <FiRotateCcw/>
-                  </button>
-                </div>
-                <div className="flex gap-2 items-center justify-center">
-                  <Menu as="div" className="relative justify-center flex-shrink-0 rounded border border-border w-6 h-6 text-lg">
-                    <MenuButton as="button" className="w-full h-full flex items-center justify-center">
-                      <FiMoreVertical />
-                    </MenuButton>
-                    <RosterCardMenu
-                      roster={roster}
-                      isOwner={isOwner}
-                      onEdit={handleEditRosterClick}
-                      onPrint={handleRosterPrint}
-                    />
-                  </Menu>
-                </div>
+          <div className="flex flex-col items-center gap-1">
+            <h6 className="font-bold text-main invisible">1</h6>
+            <div key="resetEditRoster" className="flex items-center">
+              <div className="flex gap-2 items-center justify-center">
+                <button
+                  className="flex items-center justify-center rounded border border-border w-6 h-6 text-lg"
+                  onClick={handleResetClick}
+                >
+                  <FiRotateCcw/>
+                </button>
+              </div>
+              <div className="flex gap-2 items-center justify-center">
+                <Menu as="div" className="relative justify-center flex-shrink-0 rounded border border-border w-6 h-6 text-lg">
+                  <MenuButton as="button" className="w-full h-full flex items-center justify-center">
+                    <FiMoreVertical />
+                  </MenuButton>
+                  <RosterCardMenu
+                    roster={roster}
+                    isOwner={isOwner}
+                    onEdit={handleEditRosterClick}
+                    onPrint={handleRosterPrint}
+                  />
+                </Menu>
               </div>
             </div>
+          </div>
         </div>
       )}
       <div className="max-w-7xl mx-auto print:max-w-none">
@@ -591,95 +592,95 @@ export default function RosterPageClient({
         <div className="leading-relaxed px-1">
           {/* Operatives */}
           <div className={tab === 'operatives' ? 'block' : 'hidden'} style={{ pageBreakBefore: 'always'}}>
-              <h3 className="font-title text-main text-center printonly mb-2">Operatives</h3>
-              {isOwner && (
-                <div className="flex justify-between items-center mb-2 noprint">
-                  <button className={clsx(badgeClass, 'mb-2')} onClick={() => showInfoModal(
-                    {
-                      title: 'Composition',
-                      body:
-                        <div>
-                          { roster.killteam?.archetypes && 
-                            <>
-                              <em className="text-main">Archetypes: {roster.killteam?.archetypes ?? 'None'}</em>
-                              <hr className="mx-12 my-2" />
-                            </>
-                          }
-                          <Markdown>{roster.killteam?.composition || ''}</Markdown>
-                        </div>
-                    }
-                  )}>
-                    <FiInfo /> Composition
-                  </button>
-                  <button className={clsx(badgeClass, 'mb-2')} onClick={() => setShowDeploymentModal(true)}>
-                    <FiList /> Deploy/Reserve
-                  </button>
+            <h3 className="font-title text-main text-center printonly mb-2">Operatives</h3>
+            {isOwner && (
+              <div className="flex justify-between items-center mb-2 noprint">
+                <button className={clsx(badgeClass, 'mb-2')} onClick={() => showInfoModal(
+                  {
+                    title: 'Composition',
+                    body:
+                      <div>
+                        { roster.killteam?.archetypes && 
+                          <>
+                            <em className="text-main">Archetypes: {roster.killteam?.archetypes ?? 'None'}</em>
+                            <hr className="mx-12 my-2" />
+                          </>
+                        }
+                        <Markdown>{roster.killteam?.composition || ''}</Markdown>
+                      </div>
+                  }
+                )}>
+                  <FiInfo /> Composition
+                </button>
+                <button className={clsx(badgeClass, 'mb-2')} onClick={() => setShowDeploymentModal(true)}>
+                  <FiList /> Deploy/Reserve
+                </button>
+              </div>
+            )}
+
+            <>
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {/* Deployed Ops */}
+                {ops.filter((op) => op.isDeployed).map((op, idx) => {
+                  return (
+                    <OpCard
+                      key={op.opId}
+                      seq={idx + 1}
+                      op={op}
+                      roster={roster}
+                      killteam={roster.killteam ?? null}
+                      isOwner={isOwner}
+                      allWeaponRules={allWeaponRules ?? []}
+                      onOpUpdated={updateOp}
+                      onOpDeleted={deleteOp}
+                      onMoveUp={isOwner ? () => reorderOp(op.opId, 'up') : () => {}}
+                      onMoveDown={isOwner ? () => reorderOp(op.opId, 'down') : () => {}}
+                      onMoveFirst={isOwner ? () => reorderOp(op.opId, 'top') : () => {}}
+                      onMoveLast={isOwner ? () => reorderOp(op.opId, 'bottom') : () => {}}
+                      onPortraitClick={() => handlePortraitClick(`${getOpPortraitUrl(op.opId)}?v=${toEpochMs(op.portraitUpdatedAt)}`)}
+                    />)
+                })}
+                {/* Add Op Button */}
+                {isOwner && (
+                  <AddOpForm
+                    key="Add Operative"
+                    roster={roster}
+                    allWeaponRules={allWeaponRules ?? []}
+                    onOpAdded={addOp}
+                  />
+                )}
+              </div>
+
+              {/* Reserves Section */}
+              {ops.some(op => !op.isDeployed) && (
+                <div className="noprint grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  <h4 className="col-span-full text-muted tracking-wide mt-2">
+                    Reserves
+                  </h4>
+                  {ops.filter(op => !op.isDeployed).map((op, idx) => (
+                    <OpCard
+                      key={op.opId}
+                      seq={idx + 1}
+                      op={op}
+                      roster={roster}
+                      killteam={roster.killteam ?? null}
+                      isOwner={isOwner}
+                      allWeaponRules={allWeaponRules ?? []}
+                      onOpUpdated={updateOp}
+                      onOpDeleted={deleteOp}
+                      onMoveUp={isOwner ? () => reorderOp(op.opId, 'up') : () => {}}
+                      onMoveDown={isOwner ? () => reorderOp(op.opId, 'down') : () => {}}
+                      onMoveFirst={isOwner ? () => reorderOp(op.opId, 'top') : () => {}}
+                      onMoveLast={isOwner ? () => reorderOp(op.opId, 'bottom') : () => {}}
+                      onPortraitClick={() =>
+                        handlePortraitClick(`${getOpPortraitUrl(op.opId)}?v=${toEpochMs(op.portraitUpdatedAt)}`)
+                      }
+                    />
+                  ))}
                 </div>
               )}
-
-              <>
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {/* Deployed Ops */}
-                  {ops.filter((op) => op.isDeployed).map((op, idx) => {
-                    return (
-                      <OpCard
-                        key={op.opId}
-                        seq={idx + 1}
-                        op={op}
-                        roster={roster}
-                        killteam={roster.killteam ?? null}
-                        isOwner={isOwner}
-                        allWeaponRules={allWeaponRules ?? []}
-                        onOpUpdated={updateOp}
-                        onOpDeleted={deleteOp}
-                        onMoveUp={isOwner ? () => reorderOp(op.opId, 'up') : () => {}}
-                        onMoveDown={isOwner ? () => reorderOp(op.opId, 'down') : () => {}}
-                        onMoveFirst={isOwner ? () => reorderOp(op.opId, 'top') : () => {}}
-                        onMoveLast={isOwner ? () => reorderOp(op.opId, 'bottom') : () => {}}
-                        onPortraitClick={() => handlePortraitClick(`${getOpPortraitUrl(op.opId)}?v=${toEpochMs(op.portraitUpdatedAt)}`)}
-                      />)
-                  })}
-                  {/* Add Op Button */}
-                  {isOwner && (
-                    <AddOpForm
-                      key="Add Operative"
-                      roster={roster}
-                      allWeaponRules={allWeaponRules ?? []}
-                      onOpAdded={addOp}
-                    />
-                  )}
-                </div>
-
-                {/* Reserves Section */}
-                {ops.some(op => !op.isDeployed) && (
-                  <div className="noprint grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    <h4 className="col-span-full text-muted tracking-wide mt-2">
-                      Reserves
-                    </h4>
-                    {ops.filter(op => !op.isDeployed).map((op, idx) => (
-                      <OpCard
-                        key={op.opId}
-                        seq={idx + 1}
-                        op={op}
-                        roster={roster}
-                        killteam={roster.killteam ?? null}
-                        isOwner={isOwner}
-                        allWeaponRules={allWeaponRules ?? []}
-                        onOpUpdated={updateOp}
-                        onOpDeleted={deleteOp}
-                        onMoveUp={isOwner ? () => reorderOp(op.opId, 'up') : () => {}}
-                        onMoveDown={isOwner ? () => reorderOp(op.opId, 'down') : () => {}}
-                        onMoveFirst={isOwner ? () => reorderOp(op.opId, 'top') : () => {}}
-                        onMoveLast={isOwner ? () => reorderOp(op.opId, 'bottom') : () => {}}
-                        onPortraitClick={() =>
-                          handlePortraitClick(`${getOpPortraitUrl(op.opId)}?v=${toEpochMs(op.portraitUpdatedAt)}`)
-                        }
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
-            </div>
+            </>
+          </div>
 
           {/* Equipment */}
           <div className={tab === 'equipment' ? 'block' : 'hidden'}>
@@ -743,12 +744,12 @@ export default function RosterPageClient({
             <div className="columns-2">
               {printEquipment?.map((eq) => {
                 return (
-                <div key={eq.eqId} className="section border border-border rounded p-1 m-1">
-                  <h5>{eq.eqName}</h5>
-                  <Markdown>
-                    {eq.description}
-                  </Markdown>
-                </div>
+                  <div key={eq.eqId} className="section border border-border rounded p-1 m-1">
+                    <h5>{eq.eqName}</h5>
+                    <Markdown>
+                      {eq.description}
+                    </Markdown>
+                  </div>
                 )
               })}
             </div>
@@ -760,13 +761,13 @@ export default function RosterPageClient({
             <div className="columns-2">
               {roster.killteam?.ploys?.map((ploy) => {
                 return (
-                <div key={ploy.ployId} className="section border border-border rounded p-1 m-1">
-                  <h5>{ploy.ployName}</h5>
-                  <em className="text-sm">{ploy.ployType == 'S' ? 'Strategy ' : 'Firefight '} Ploy</em>
-                  <Markdown>
-                    {ploy.description}
-                  </Markdown>
-                </div>
+                  <div key={ploy.ployId} className="section border border-border rounded p-1 m-1">
+                    <h5>{ploy.ployName}</h5>
+                    <em className="text-sm">{ploy.ployType == 'S' ? 'Strategy ' : 'Firefight '} Ploy</em>
+                    <Markdown>
+                      {ploy.description}
+                    </Markdown>
+                  </div>
                 )
               })}
             </div>
@@ -778,13 +779,13 @@ export default function RosterPageClient({
             <div className="columns-2">
               {printTacOps?.map((op) => {
                 return (
-                <div key={op.title} className="section border border-border rounded p-1 m-1">
-                  <h5>{op.title}</h5>
-                  <em className="text-sm">{op.archetype}</em>
-                  <Markdown>
-                    {op.description}
-                  </Markdown>
-                </div>
+                  <div key={op.title} className="section border border-border rounded p-1 m-1">
+                    <h5>{op.title}</h5>
+                    <em className="text-sm">{op.archetype}</em>
+                    <Markdown>
+                      {op.description}
+                    </Markdown>
+                  </div>
                 )
               })}
             </div>
