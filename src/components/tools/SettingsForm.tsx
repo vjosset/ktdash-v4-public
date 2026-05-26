@@ -19,6 +19,8 @@ export default function SettingsForm() {
   const [showConfirmLogOut, setShowConfirmLogOut] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [isPrivate, setIsPrivate] = useState<boolean>(false)
+  const [isPrivateLoaded, setIsPrivateLoaded] = useState(false)
   
   useEffect(() => {
     window.addEventListener('beforeinstallprompt', (e: Event) => {
@@ -26,6 +28,34 @@ export default function SettingsForm() {
       setDeferredPrompt(e)
     })
   }, [])
+
+  // Load server-side isPrivate value for the logged-in user
+  useEffect(() => {
+    if (!session?.user?.userName) return
+    fetch(`/api/users/${session.user.userName}`)
+      .then(r => r.json())
+      .then(data => {
+        setIsPrivate(data.isPrivate ?? false)
+        setIsPrivateLoaded(true)
+      })
+      .catch(() => setIsPrivateLoaded(true))
+  }, [session?.user?.userName])
+
+  const toggleIsPrivate = async () => {
+    if (!session?.user?.userName) return
+    const newValue = !isPrivate
+    setIsPrivate(newValue)
+    const res = await fetch(`/api/users/${session.user.userName}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isPrivate: newValue }),
+    })
+    if (!res.ok) {
+      // Revert on failure
+      setIsPrivate(!newValue)
+      toast.error('Could not update privacy setting')
+    }
+  }
 
   const handleInstall = async () => {
     if (deferredPrompt && 'prompt' in deferredPrompt) {
@@ -48,7 +78,7 @@ export default function SettingsForm() {
     }
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match")
+      toast.error('Passwords do not match')
       return
     }
 
@@ -162,6 +192,25 @@ export default function SettingsForm() {
         <hr />
       </>
 
+      {/* Privacy Settings */}
+      {session?.user?.userId && isPrivateLoaded && (
+        <div>
+          <SectionTitle>Privacy</SectionTitle>
+          <label htmlFor="isPrivate" className="flex items-center gap-3">
+            <Checkbox
+              id="isPrivate"
+              checked={isPrivate}
+              onChange={toggleIsPrivate}
+            />
+            Keep my rosters private
+          </label>
+          <p className="text-muted mt-1">
+            When enabled, your rosters will not appear in the homepage spotlight, on kill team roster lists, or in the site index.
+            You can still share your roster links; anyone with the link can view your roster.
+          </p>
+        </div>
+      )}
+
       {/* Account Tools */}
       {session?.user?.userId && (
         <>
@@ -190,10 +239,10 @@ export default function SettingsForm() {
               autoComplete="new-password"
               onChange={e => setConfirmPassword(e.target.value)} />
             <div className="flex justify-end">
-            <Button onClick={updatePassword}>
-              <h6>Update Password</h6>
-            </Button>
-          </div>
+              <Button onClick={updatePassword}>
+                <h6>Update Password</h6>
+              </Button>
+            </div>
           </div>
     
           {showConfirmLogOut &&

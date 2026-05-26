@@ -94,7 +94,10 @@ export class RosterRepository extends BaseRepository {
 
   async getRandomSpotlightRosterId(): Promise<string | null> {
     const spotlightRosters = await this.prisma.roster.findMany({
-      where: { isSpotlight: true },
+      where: {
+        isSpotlight: true,
+        user: { isPrivate: false },
+      },
       select: { rosterId: true }, // Just get IDs first to reduce payload
     });
 

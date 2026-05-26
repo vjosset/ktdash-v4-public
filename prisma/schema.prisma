@@ -12,6 +12,7 @@ model User {
   email     String?  @db.VarChar(250)
   userName  String   @unique @db.VarChar(250)
   password  String   @db.VarChar(250)
+  isPrivate Boolean  @default(false)
   createdAt DateTime @default(now())
 
   rosters   Roster[]

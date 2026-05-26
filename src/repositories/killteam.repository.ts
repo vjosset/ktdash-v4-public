@@ -51,7 +51,10 @@ export class KillteamRepository extends BaseRepository {
         },
         // Only include spotlight rosters in the list; default is provided separately
         rosters: {
-          where: { isSpotlight: true },
+          where: {
+            isSpotlight: true,
+            user: { isPrivate: false },
+          },
           include: {
             user: true,
             killteam: true

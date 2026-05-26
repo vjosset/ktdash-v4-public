@@ -25,13 +25,17 @@ export async function GET() {
 
   // Fetch rosters
   const rosters = await prisma.roster.findMany({
-    where: { isSpotlight: true },
+    where: {
+      isSpotlight: true,
+      user: { isPrivate: false },
+    },
     select: { rosterId: true },
   })
 
   // Fetch users
   const users = await prisma.user.findMany({
-    where: { // Only users with at least one spotlighted roster
+    where: { // Only non-private users with at least one spotlighted roster
+      isPrivate: false,
       rosters: {
         some: {
           isSpotlight: true,
