@@ -2,7 +2,6 @@
 
 import { KillteamLink, RosterLink } from '@/components/shared/Links'
 import PortraitCropper, { getCroppedBlob } from '@/components/shared/PortraitCropper'
-import { Area } from 'react-easy-crop'
 import { Button, Checkbox, Input, Label, Modal } from '@/components/ui'
 import Markdown from '@/components/ui/Markdown'
 import { AbilityPlain, KillteamPlain, OpTypePlain, OptionPlain, RosterPlain, WeaponPlain, WeaponProfilePlain } from '@/types'
@@ -10,12 +9,14 @@ import { commands } from '@uiw/react-md-editor'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Area } from 'react-easy-crop'
 import { FiChevronDown, FiChevronRight, FiCopy, FiHelpCircle, FiMove, FiPlus, FiTrash } from 'react-icons/fi'
 import { toast } from 'sonner'
 
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false })
 
 const MAXOPTYPES = 30
+const MAXWEAPONS = 50
 const MAXWEAPONPROFILES = 8
 const MAX_PORTRAIT_BYTES = 10 * 1024 * 1024 // 10MB
 
@@ -516,7 +517,7 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
 
   const addOpType = useCallback(async (): Promise<OpTypePlain | null> => {
     try {
-      const res = await fetch(`/api/optypes`, {
+      const res = await fetch('/api/optypes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1187,32 +1188,32 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
 
       {/* General */}
       {tab === 'general' && (
-      <div className="mt-4 grid gap-4">
-        {/* Stats */}
-        {killteam.isPublished && <Stats killteamId={team.killteamId} />}
+        <div className="mt-4 grid gap-4">
+          {/* Stats */}
+          {killteam.isPublished && <Stats killteamId={team.killteamId} />}
 
-        {/* Name + Publish in one row */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <Label htmlFor="ktName" className="whitespace-nowrap">Killteam Name:</Label>
-          <Input
-            id="ktName"
-            value={team.killteamName}
-            maxLength={250}
-            className="min-w-[220px] flex-1"
-            onChange={(e) => setTeam({ ...team, killteamName: e.target.value })}
-            onBlur={(e) => {
-              const v = e.target.value.trim()
-              if (v && v !== killteam.killteamName) saveField({ killteamName: v })
-            }}
-            placeholder="Enter killteam name"
-          />
-          <div className="flex items-center gap-2 ml-auto">
-            <Checkbox
-              id="isPublished"
-              checked={!!team.isPublished}
-              onChange={(e) => {
-                const checked = (e.target as HTMLInputElement).checked
-                if (checked) {
+          {/* Name + Publish in one row */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <Label htmlFor="ktName" className="whitespace-nowrap">Killteam Name:</Label>
+            <Input
+              id="ktName"
+              value={team.killteamName}
+              maxLength={250}
+              className="min-w-[220px] flex-1"
+              onChange={(e) => setTeam({ ...team, killteamName: e.target.value })}
+              onBlur={(e) => {
+                const v = e.target.value.trim()
+                if (v && v !== killteam.killteamName) saveField({ killteamName: v })
+              }}
+              placeholder="Enter killteam name"
+            />
+            <div className="flex items-center gap-2 ml-auto">
+              <Checkbox
+                id="isPublished"
+                checked={!!team.isPublished}
+                onChange={(e) => {
+                  const checked = (e.target as HTMLInputElement).checked
+                  if (checked) {
                   //const issues = validateReadyToPublish({ ...team, isPublished: true })
                   //if (issues.length) {
                   //  setPublishErrors(issues)
@@ -1220,890 +1221,890 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
                   //  return
                   //}
                   //setPublishErrors([])
-                } else {
-                  setPublishErrors([])
-                }
+                  } else {
+                    setPublishErrors([])
+                  }
 
-                const next = { ...team, isPublished: checked }
-                setTeam(next)
-                saveField({ isPublished: checked })
-              }}
-            />
-            <Label htmlFor="isPublished" className="whitespace-nowrap">Publish</Label>
+                  const next = { ...team, isPublished: checked }
+                  setTeam(next)
+                  saveField({ isPublished: checked })
+                }}
+              />
+              <Label htmlFor="isPublished" className="whitespace-nowrap">Publish</Label>
+            </div>
           </div>
-        </div>
 
-        {publishErrors.length > 0 && (
-          <div className="text-sm text-destructive mt-2">
-            <ul className="list-disc list-inside space-y-1">
-              {publishErrors.map((issue) => (
-                <li key={issue}>{issue}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+          {publishErrors.length > 0 && (
+            <div className="text-sm text-destructive mt-2">
+              <ul className="list-disc list-inside space-y-1">
+                {publishErrors.map((issue) => (
+                  <li key={issue}>{issue}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-        {/* Archetypes in one row */}
-        <div className="flex items-center gap-4 flex-wrap">
-          <Label className="whitespace-nowrap">Archetypes:</Label>
+          {/* Archetypes in one row */}
           <div className="flex items-center gap-4 flex-wrap">
-            {['Seek And Destroy', 'Security', 'Recon', 'Infiltration'].map((arch) => {
-              const selected = (team.archetypes || '').split('/').map(a => a.trim()).filter(Boolean)
-              const isChecked = selected.includes(arch)
-              return (
-                <label key={arch} className="inline-flex items-center gap-2">
-                  <Checkbox
-                    checked={isChecked}
-                    onChange={(e) => {
-                      const checked = (e.target as HTMLInputElement).checked
-                      const baseOrder = ['Seek And Destroy', 'Security', 'Recon', 'Infiltration']
-                      const current = new Set((team.archetypes || '').split('/').map(a => a.trim()).filter(Boolean))
-                      if (checked) current.add(arch); else current.delete(arch)
-                      const next = baseOrder.filter(a => current.has(a)).join('/')
-                      const updated = { ...team, archetypes: next }
-                      setTeam(updated)
-                      saveField({ archetypes: next })
-                    }}
-                  />
-                  <span>{arch}</span>
-                </label>
-              )
-            })}
+            <Label className="whitespace-nowrap">Archetypes:</Label>
+            <div className="flex items-center gap-4 flex-wrap">
+              {['Seek And Destroy', 'Security', 'Recon', 'Infiltration'].map((arch) => {
+                const selected = (team.archetypes || '').split('/').map(a => a.trim()).filter(Boolean)
+                const isChecked = selected.includes(arch)
+                return (
+                  <label key={arch} className="inline-flex items-center gap-2">
+                    <Checkbox
+                      checked={isChecked}
+                      onChange={(e) => {
+                        const checked = (e.target as HTMLInputElement).checked
+                        const baseOrder = ['Seek And Destroy', 'Security', 'Recon', 'Infiltration']
+                        const current = new Set((team.archetypes || '').split('/').map(a => a.trim()).filter(Boolean))
+                        if (checked) current.add(arch); else current.delete(arch)
+                        const next = baseOrder.filter(a => current.has(a)).join('/')
+                        const updated = { ...team, archetypes: next }
+                        setTeam(updated)
+                        saveField({ archetypes: next })
+                      }}
+                    />
+                    <span>{arch}</span>
+                  </label>
+                )
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* Default roster controls */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label className="whitespace-nowrap">Default Roster</Label>
-            {savingDefaultRoster && (
-              <span className="text-xs text-muted-foreground">Saving...</span>
-            )}
-          </div>
-          {loadingRosters ? (
-            <div className="text-sm text-muted-foreground">Loading rosters...</div>
-          ) : rosterError ? (
-            <div className="text-sm text-destructive">{rosterError}</div>
-          ) : ownedRosters.length === 0 ? (
-            <div className="text-sm text-muted-foreground">Create a roster for this killteam to choose a default.</div>
-          ) : (
-            <div className="space-y-1">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="default-roster"
-                  className="h-4 w-4 accent-main"
-                  checked={!team.defaultRosterId}
-                  onChange={() => handleDefaultRosterChange(null)}
-                  disabled={savingDefaultRoster}
-                />
-                <span className="text-sm">No default</span>
-              </label>
-              {ownedRosters.map((roster) => (
-                <div key={roster.rosterId} className="flex items-center gap-2">
+          {/* Default roster controls */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label className="whitespace-nowrap">Default Roster</Label>
+              {savingDefaultRoster && (
+                <span className="text-xs text-muted-foreground">Saving...</span>
+              )}
+            </div>
+            {loadingRosters ? (
+              <div className="text-sm text-muted-foreground">Loading rosters...</div>
+            ) : rosterError ? (
+              <div className="text-sm text-destructive">{rosterError}</div>
+            ) : ownedRosters.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Create a roster for this killteam to choose a default.</div>
+            ) : (
+              <div className="space-y-1">
+                <label className="flex items-center gap-2">
                   <input
                     type="radio"
                     name="default-roster"
                     className="h-4 w-4 accent-main"
-                    checked={team.defaultRosterId === roster.rosterId}
-                    onChange={() => handleDefaultRosterChange(roster.rosterId)}
+                    checked={!team.defaultRosterId}
+                    onChange={() => handleDefaultRosterChange(null)}
                     disabled={savingDefaultRoster}
-                    aria-label={`Set ${roster.rosterName} as default roster`}
                   />
-                  <RosterLink rosterId={roster.rosterId} rosterName={roster.rosterName} newTab />
-                </div>
-              ))}
-            </div>
-          )}
-          {missingDefaultRoster && !loadingRosters && !rosterError && (
-            <div className="text-sm text-destructive">
+                  <span className="text-sm">No default</span>
+                </label>
+                {ownedRosters.map((roster) => (
+                  <div key={roster.rosterId} className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="default-roster"
+                      className="h-4 w-4 accent-main"
+                      checked={team.defaultRosterId === roster.rosterId}
+                      onChange={() => handleDefaultRosterChange(roster.rosterId)}
+                      disabled={savingDefaultRoster}
+                      aria-label={`Set ${roster.rosterName} as default roster`}
+                    />
+                    <RosterLink rosterId={roster.rosterId} rosterName={roster.rosterName} newTab />
+                  </div>
+                ))}
+              </div>
+            )}
+            {missingDefaultRoster && !loadingRosters && !rosterError && (
+              <div className="text-sm text-destructive">
               The roster currently set as default is unavailable. Choose a new default or pick 'No default'.
-            </div>
-          )}
-        </div>
-
-        {/* Two-column editors: Description (left) | Composition (right) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="ktDescription">Description</Label>
-              <a
-                href="https://www.markdownguide.org/basic-syntax/"
-                target="_blank"
-                rel="noreferrer"
-                className="text-muted-foreground hover:text-main"
-                aria-label="Markdown help"
-              >
-                <FiHelpCircle />
-              </a>
-            </div>
-            <div className="custom-md-editor">
-              <MDEditor
-                id="ktDescription"
-                value={team.description}
-                onChange={(val) => {
-                  const v = val || ''
-                  setTeam({ ...team, description: v })
-                  if (descTimer.current) clearTimeout(descTimer.current)
-                  descTimer.current = setTimeout(() => saveField({ description: v }), 800)
-                }}
-                preview="edit"
-                data-color-mode="dark"
-                style={{ minHeight: 300 }}
-                commands={[
-                  commands.bold,
-                  commands.italic,
-                  commands.hr,
-                  commands.divider,
-                  commands.quote,
-                  commands.unorderedListCommand,
-                  commands.orderedListCommand,
-                ]}
-              />
-            </div>
+              </div>
+            )}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="ktComposition">Composition</Label>
-              <a
-                href="https://www.markdownguide.org/basic-syntax/"
-                target="_blank"
-                rel="noreferrer"
-                className="text-muted-foreground hover:text-main"
-                aria-label="Markdown help"
-              >
-                <FiHelpCircle />
-              </a>
-            </div>
-            <div className="custom-md-editor">
-              <MDEditor
-                id="ktComposition"
-                value={team.composition}
-                onChange={(val) => {
-                  const v = val || ''
-                  setTeam({ ...team, composition: v })
-                  if (compTimer.current) clearTimeout(compTimer.current)
-                  compTimer.current = setTimeout(() => saveField({ composition: v }), 800)
-                }}
-                preview="edit"
-                data-color-mode="dark"
-                style={{ minHeight: 300 }}
-                commands={[
-                  commands.bold,
-                  commands.italic,
-                  commands.hr,
-                  commands.divider,
-                  commands.quote,
-                  commands.unorderedListCommand,
-                  commands.orderedListCommand,
-                ]}
-              />
-            </div>
-          </div>
-        </div>
 
-        {/* Danger Zone: Delete Killteam */}
-        <div className="border border-red-700/50 bg-red-900/10 rounded p-3">
-          <div className="flex items-center justify-between gap-2">
+          {/* Two-column editors: Description (left) | Composition (right) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h6 className="text-red-600">Danger Zone</h6>
-              <p className="text-sm text-muted-foreground mt-1">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="ktDescription">Description</Label>
+                <a
+                  href="https://www.markdownguide.org/basic-syntax/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-muted-foreground hover:text-main"
+                  aria-label="Markdown help"
+                >
+                  <FiHelpCircle />
+                </a>
+              </div>
+              <div className="custom-md-editor">
+                <MDEditor
+                  id="ktDescription"
+                  value={team.description}
+                  onChange={(val) => {
+                    const v = val || ''
+                    setTeam({ ...team, description: v })
+                    if (descTimer.current) clearTimeout(descTimer.current)
+                    descTimer.current = setTimeout(() => saveField({ description: v }), 800)
+                  }}
+                  preview="edit"
+                  data-color-mode="dark"
+                  style={{ minHeight: 300 }}
+                  commands={[
+                    commands.bold,
+                    commands.italic,
+                    commands.hr,
+                    commands.divider,
+                    commands.quote,
+                    commands.unorderedListCommand,
+                    commands.orderedListCommand,
+                  ]}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="ktComposition">Composition</Label>
+                <a
+                  href="https://www.markdownguide.org/basic-syntax/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-muted-foreground hover:text-main"
+                  aria-label="Markdown help"
+                >
+                  <FiHelpCircle />
+                </a>
+              </div>
+              <div className="custom-md-editor">
+                <MDEditor
+                  id="ktComposition"
+                  value={team.composition}
+                  onChange={(val) => {
+                    const v = val || ''
+                    setTeam({ ...team, composition: v })
+                    if (compTimer.current) clearTimeout(compTimer.current)
+                    compTimer.current = setTimeout(() => saveField({ composition: v }), 800)
+                  }}
+                  preview="edit"
+                  data-color-mode="dark"
+                  style={{ minHeight: 300 }}
+                  commands={[
+                    commands.bold,
+                    commands.italic,
+                    commands.hr,
+                    commands.divider,
+                    commands.quote,
+                    commands.unorderedListCommand,
+                    commands.orderedListCommand,
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Danger Zone: Delete Killteam */}
+          <div className="border border-red-700/50 bg-red-900/10 rounded p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h6 className="text-red-600">Danger Zone</h6>
+                <p className="text-sm text-muted-foreground mt-1">
                 Deleting this homebrew killteam will permanently remove all of its data. This includes all
                 operatives, weapons, abilities, ploys, and equipments. Any rosters built using this team — even those
                 owned by other users — will be deleted. This action cannot be undone.
-              </p>
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                className="text-red-600 border border-red-600 hover:text-red-700 hover:border-red-700"
+                onClick={() => setShowDeleteTeamModal(true)}
+              >
+                <FiTrash /> Delete Killteam
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              className="text-red-600 border border-red-600 hover:text-red-700 hover:border-red-700"
-              onClick={() => setShowDeleteTeamModal(true)}
-            >
-              <FiTrash /> Delete Killteam
-            </Button>
           </div>
         </div>
-      </div>
       )}
 
       {/* Operatives */}
       {tab === 'operatives' && (
-      <div className="mt-2 flex gap-4">
-        {/* Left: List of operative types */}
-        <div className="w-72 shrink-0">
-          <div className="flex items-center justify-between mb-2">
-            <h5>Operative Types</h5>
-            <button
-              className="text-main disabled:text-muted p-1 border border-main rounded hover:bg-muted/20"
-              onClick={async () => {
-                const created = await addOpType()
-                if (created) setSelectedOpTypeId(created.opTypeId)
-              }}
-              disabled={(team.opTypes?.length ?? 0) >= MAXOPTYPES}
-              title={(team.opTypes?.length ?? 0) >= MAXOPTYPES ? `Maximum of ${MAXOPTYPES} operative types reached` : ''}
-            >
-              <FiPlus aria-label="Add Operative Type" />
-            </button>
-          </div>
-          <div className="space-y-1">
-            {team.opTypes.map((o) => {
-              const selected = o.opTypeId === selectedOpTypeId
-              return (
-                <button
-                  key={o.opTypeId}
-                  className={`w-full text-left border rounded px-2 py-2 ${selected ? 'border-main bg-muted/20' : 'border-border hover:border-muted'}`}
-                  onClick={() => setSelectedOpTypeId(o.opTypeId)}
-                  draggable
-                  onDragStart={() => { dragOpId.current = o.opTypeId }}
-                  onDragOver={(e) => { e.preventDefault() }}
-                  onDrop={() => handleDropOpType(o.opTypeId)}
-                  title="Drag to reorder"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className="text-muted-foreground cursor-grab active:cursor-grabbing"
-                        aria-label="Drag to reorder"
-                        title="Drag to reorder"
-                      >
-                        <FiMove />
-                      </span>
-                      <span className="truncate">{o.opTypeName || 'Unnamed'}</span>
+        <div className="mt-2 flex gap-4">
+          {/* Left: List of operative types */}
+          <div className="w-72 shrink-0">
+            <div className="flex items-center justify-between mb-2">
+              <h5>Operative Types</h5>
+              <button
+                className="text-main disabled:text-muted p-1 border border-main rounded hover:bg-muted/20"
+                onClick={async () => {
+                  const created = await addOpType()
+                  if (created) setSelectedOpTypeId(created.opTypeId)
+                }}
+                disabled={(team.opTypes?.length ?? 0) >= MAXOPTYPES}
+                title={(team.opTypes?.length ?? 0) >= MAXOPTYPES ? `Maximum of ${MAXOPTYPES} operative types reached` : ''}
+              >
+                <FiPlus aria-label="Add Operative Type" />
+              </button>
+            </div>
+            <div className="space-y-1">
+              {team.opTypes.map((o) => {
+                const selected = o.opTypeId === selectedOpTypeId
+                return (
+                  <button
+                    key={o.opTypeId}
+                    className={`w-full text-left border rounded px-2 py-2 ${selected ? 'border-main bg-muted/20' : 'border-border hover:border-muted'}`}
+                    onClick={() => setSelectedOpTypeId(o.opTypeId)}
+                    draggable
+                    onDragStart={() => { dragOpId.current = o.opTypeId }}
+                    onDragOver={(e) => { e.preventDefault() }}
+                    onDrop={() => handleDropOpType(o.opTypeId)}
+                    title="Drag to reorder"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="text-muted-foreground cursor-grab active:cursor-grabbing"
+                          aria-label="Drag to reorder"
+                          title="Drag to reorder"
+                        >
+                          <FiMove />
+                        </span>
+                        <span className="truncate">{o.opTypeName || 'Unnamed'}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">W:{o.weapons?.length ?? 0} A:{o.abilities?.length ?? 0}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">W:{o.weapons?.length ?? 0} A:{o.abilities?.length ?? 0}</span>
-                  </div>
-                </button>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Right: Details for selected operative type */}
+          <div className="flex-1">
+            {(() => {
+              const op = team.opTypes.find(o => o.opTypeId === selectedOpTypeId)
+              if (!op) return (
+                <div className="text-muted-foreground">Select an operative type to edit.</div>
               )
-            })}
-          </div>
-        </div>
-
-        {/* Right: Details for selected operative type */}
-        <div className="flex-1">
-          {(() => {
-            const op = team.opTypes.find(o => o.opTypeId === selectedOpTypeId)
-            if (!op) return (
-              <div className="text-muted-foreground">Select an operative type to edit.</div>
-            )
-            return (
-              <div key={op.opTypeId} className="border border-border rounded p-3 bg-card">
-                <h6>General</h6>
-                {/* Main: Name + Stats + Delete */}
-                <div className="grid grid-cols-12 gap-2 items-start">
-                <div className="col-span-12 md:col-span-7">
-                  <Label className="whitespace-nowrap">Name</Label>
-                  <Input
-                    value={op.opTypeName}
-                    maxLength={250}
-                    onChange={(e) => setTeam({
-                      ...team,
-                      opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, opTypeName: e.target.value } : o)
-                    })}
-                    onBlur={() => saveOpType(op)}
-                  />
-                </div>
-                <div className="col-span-12 md:col-span-4">
-                  <div className="grid grid-cols-4 gap-2">
-                    <div>
-                      <Label>APL</Label>
+              return (
+                <div key={op.opTypeId} className="border border-border rounded p-3 bg-card">
+                  <h6>General</h6>
+                  {/* Main: Name + Stats + Delete */}
+                  <div className="grid grid-cols-12 gap-2 items-start">
+                    <div className="col-span-12 md:col-span-7">
+                      <Label className="whitespace-nowrap">Name</Label>
                       <Input
-                        type="number"
-                        className="no-spinner"
-                        value={op.APL}
-                        onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, APL: parseInt(e.target.value || '0', 10) } : o) })}
+                        value={op.opTypeName}
+                        maxLength={250}
+                        onChange={(e) => setTeam({
+                          ...team,
+                          opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, opTypeName: e.target.value } : o)
+                        })}
                         onBlur={() => saveOpType(op)}
                       />
                     </div>
-                    <div>
-                      <Label>MOVE</Label>
-                      <Input
-                        value={op.MOVE}
-                        maxLength={10}
-                        onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, MOVE: e.target.value } : o) })}
-                        onBlur={() => saveOpType(op)}
-                      />
-                    </div>
-                    <div>
-                      <Label>SAVE</Label>
-                      <Input
-                        value={op.SAVE}
-                        maxLength={10}
-                        onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, SAVE: e.target.value } : o) })}
-                        onBlur={() => saveOpType(op)}
-                      />
-                    </div>
-                    <div>
-                      <Label>WOUNDS</Label>
-                      <Input
-                        type="number"
-                        className="no-spinner"
-                        value={op.WOUNDS}
-                        onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, WOUNDS: parseInt(e.target.value || '0', 10) } : o) })}
-                        onBlur={() => saveOpType(op)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="col-span-12 md:col-span-1 md:text-right self-start">
-                  <div className="flex gap-2 justify-start md:justify-end">
-                    <button
-                      className="text-main whitespace-nowrap p-1 border border-main rounded hover:bg-muted/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => cloneOpType(op)}
-                      title="Clone Operative Type"
-                      disabled={cloningOpTypeId === op.opTypeId}
-                    >
-                      <FiCopy aria-label="Clone" />
-                    </button>
-                    <button
-                      className="text-destructive whitespace-nowrap p-1 border border-main rounded hover:bg-muted/20"
-                      onClick={() => setPendingDelete({ kind: 'optype', op })}
-                      title="Delete Operative Type"
-                      disabled={cloningOpTypeId === op.opTypeId}
-                    >
-                      <FiTrash aria-label="Delete" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Meta: Keywords + NameType */}
-              <div className="grid grid-cols-12 gap-2 mt-2">
-                <div className="col-span-12 md:col-span-8">
-                  <Label>Keywords</Label>
-                  <Input
-                    value={op.keywords}
-                    maxLength={250}
-                    onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, keywords: e.target.value } : o) })}
-                    onBlur={() => saveOpType(op)}
-                  />
-                </div>
-                <div className="col-span-12 md:col-span-4">
-                  <Label>NameType</Label>
-                  <select
-                    className="bg-card text-foreground border border-border rounded p-1 my-2 focus:outline-none focus:ring-2 focus:ring-main w-full"
-                    value={op.nameType}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      const nextOps = team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, nameType: v } : o)
-                      setTeam({ ...team, opTypes: nextOps })
-                      // Save immediately on selection
-                      saveOpType({ ...op, nameType: v })
-                    }}
-                  >
-                    <option value="">Select…</option>
-                    {NAME_TYPES.map(nt => (
-                      <option key={nt} value={nt}>{nt}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Weapons */}
-              <div className="mt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <button
-                    className="flex items-center gap-2 text-foreground hover:text-main"
-                    onClick={() => setShowWeapons(!showWeapons)}
-                    aria-expanded={showWeapons}
-                    aria-controls="weapons-section"
-                  >
-                    {showWeapons ? <FiChevronDown /> : <FiChevronRight />}
-                    <h6>Weapons</h6>
-                    <span className="text-xs bg-muted/20 text-muted-foreground border border-border rounded-full px-2 py-0.5">{op.weapons?.length ?? 0}</span>
-                  </button>
-                  <button
-                    className="text-main disabled:text-muted p-1 border border-main rounded hover:bg-muted/20"
-                    onClick={() => addWeapon(op)}
-                    disabled={(op.weapons?.length ?? 0) >= 30}
-                    title={(op.weapons?.length ?? 0) >= 30 ? 'Maximum of 30 weapons reached' : ''}
-                  >
-                    <FiPlus aria-label="Add Weapon" />
-                  </button>
-                </div>
-                {showWeapons && (
-                  <div id="weapons-section" className="space-y-2">
-                   {(op.weapons ?? []).map((w) => (
-                     <div
-                       key={w.wepId}
-                       id={`wep-${w.wepId}`}
-                       className="border border-border rounded p-2"
-                       draggable
-                       onDragStart={() => { dragWepId.current = w.wepId }}
-                       onDragOver={(e) => { e.preventDefault() }}
-                       onDrop={() => handleDropWeapon(op, w.wepId)}
-                       title="Drag to reorder"
-                     >
-                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-start">
-                        <div className="sm:col-span-2">
-                          <Label>Name</Label>
+                    <div className="col-span-12 md:col-span-4">
+                      <div className="grid grid-cols-4 gap-2">
+                        <div>
+                          <Label>APL</Label>
                           <Input
-                            value={w.wepName}
-                            maxLength={250}
-                            onChange={(e) => setTeam({
-                              ...team,
-                              opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                ...o,
-                                weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? { ...ww, wepName: e.target.value } : ww)
-                              } : o)
-                            })}
-                            onBlur={() => saveWeapon(w)}
+                            type="number"
+                            className="no-spinner"
+                            value={op.APL}
+                            onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, APL: parseInt(e.target.value || '0', 10) } : o) })}
+                            onBlur={() => saveOpType(op)}
                           />
                         </div>
                         <div>
-                          <Label>Type</Label>
-                          <select
-                            className="bg-card text-foreground border border-border rounded p-1 my-2 focus:outline-none focus:ring-2 focus:ring-main w-full"
-                            value={w.wepType}
-                            onChange={(e) => {
-                              const v = e.target.value
-                              setTeam({
-                                ...team,
-                                opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                  ...o,
-                                  weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? { ...ww, wepType: v } : ww)
-                                } : o)
-                              })
-                              saveWeapon({ ...w, wepType: v })
-                            }}
-                          >
-                            {['M','R','E','P'].map(t => (
-                              <option key={t} value={t}>{t}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={w.isDefault}
-                            onChange={(e) => {
-                              const checked = (e.target as HTMLInputElement).checked
-                              setTeam({
-                                ...team,
-                                opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                  ...o,
-                                  weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? { ...ww, isDefault: checked } : ww)
-                                } : o)
-                              })
-                              saveWeapon({ ...w, isDefault: checked })
-                            }}
+                          <Label>MOVE</Label>
+                          <Input
+                            value={op.MOVE}
+                            maxLength={10}
+                            onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, MOVE: e.target.value } : o) })}
+                            onBlur={() => saveOpType(op)}
                           />
-                          <Label className="whitespace-nowrap">Default</Label>
                         </div>
-                        <div className="flex items-start justify-end gap-2 sm:col-span-1">
-                          <button
-                            className="p-1 border border-main rounded hover:bg-muted/20"
-                            aria-label="Drag to reorder"
-                            title="Drag to reorder"
-                            onMouseDown={(e) => { /* purely visual, drag is on card */ }}
-                          >
-                            <FiMove />
-                          </button>
-                          <button
-                            className="text-destructive p-1 border border-main rounded hover:bg-muted/20"
-                            title="Delete Weapon"
-                            onClick={() => setPendingDelete({ kind: 'weapon', op, wep: w })}
-                          >
-                            <FiTrash aria-label="Delete Weapon" />
-                          </button>
+                        <div>
+                          <Label>SAVE</Label>
+                          <Input
+                            value={op.SAVE}
+                            maxLength={10}
+                            onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, SAVE: e.target.value } : o) })}
+                            onBlur={() => saveOpType(op)}
+                          />
+                        </div>
+                        <div>
+                          <Label>WOUNDS</Label>
+                          <Input
+                            type="number"
+                            className="no-spinner"
+                            value={op.WOUNDS}
+                            onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, WOUNDS: parseInt(e.target.value || '0', 10) } : o) })}
+                            onBlur={() => saveOpType(op)}
+                          />
                         </div>
                       </div>
-                      {/* Profiles */}
-                      <div className="mt-2">
-                        <div className="space-y-1">
-                          {/* Column headers for profiles with add button on the same line */}
-                          <div className="hidden sm:grid grid-cols-8 gap-1 items-center text-muted-foreground">
-                            <div className="col-span-2"><Label className="m-0">Profile</Label></div>
-                            <div><Label className="m-0">ATK</Label></div>
-                            <div><Label className="m-0">HIT</Label></div>
-                            <div><Label className="m-0">DMG</Label></div>
-                            <div className="col-span-2"><Label className="m-0">WR</Label></div>
-                            <div className="flex justify-end">
-                              <button
-                                className="text-main disabled:text-muted p-1 border border-main rounded hover:bg-muted/20"
-                                onClick={() => addWeaponProfile(op, w)}
-                                disabled={(w.profiles?.length ?? 0) >= MAXWEAPONPROFILES}
-                                title={(w.profiles?.length ?? 0) >= MAXWEAPONPROFILES ? `Maximum of ${MAXWEAPONPROFILES} profiles reached` : ''}
-                              >
-                                <FiPlus aria-label="Add Profile" />
-                              </button>
-                            </div>
-                          </div>
+                    </div>
+                    <div className="col-span-12 md:col-span-1 md:text-right self-start">
+                      <div className="flex gap-2 justify-start md:justify-end">
+                        <button
+                          className="text-main whitespace-nowrap p-1 border border-main rounded hover:bg-muted/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => cloneOpType(op)}
+                          title="Clone Operative Type"
+                          disabled={cloningOpTypeId === op.opTypeId}
+                        >
+                          <FiCopy aria-label="Clone" />
+                        </button>
+                        <button
+                          className="text-destructive whitespace-nowrap p-1 border border-main rounded hover:bg-muted/20"
+                          onClick={() => setPendingDelete({ kind: 'optype', op })}
+                          title="Delete Operative Type"
+                          disabled={cloningOpTypeId === op.opTypeId}
+                        >
+                          <FiTrash aria-label="Delete" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-                          {(w.profiles ?? []).map((p) => (
-                            <div
-                              key={p.wepprofileId}
-                              className="grid grid-cols-1 sm:grid-cols-8 gap-1 sm:items-center items-start"
-                              draggable
-                              onDragStart={() => { dragProfileId.current = p.wepprofileId }}
-                              onDragOver={(e) => { e.preventDefault() }}
-                              onDrop={() => handleDropProfile(op, w, p.wepprofileId)}
-                              title="Drag to reorder"
-                            >
+                  {/* Meta: Keywords + NameType */}
+                  <div className="grid grid-cols-12 gap-2 mt-2">
+                    <div className="col-span-12 md:col-span-8">
+                      <Label>Keywords</Label>
+                      <Input
+                        value={op.keywords}
+                        maxLength={250}
+                        onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, keywords: e.target.value } : o) })}
+                        onBlur={() => saveOpType(op)}
+                      />
+                    </div>
+                    <div className="col-span-12 md:col-span-4">
+                      <Label>NameType</Label>
+                      <select
+                        className="bg-card text-foreground border border-border rounded p-1 my-2 focus:outline-none focus:ring-2 focus:ring-main w-full"
+                        value={op.nameType}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          const nextOps = team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, nameType: v } : o)
+                          setTeam({ ...team, opTypes: nextOps })
+                          // Save immediately on selection
+                          saveOpType({ ...op, nameType: v })
+                        }}
+                      >
+                        <option value="">Select…</option>
+                        {NAME_TYPES.map(nt => (
+                          <option key={nt} value={nt}>{nt}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Weapons */}
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <button
+                        className="flex items-center gap-2 text-foreground hover:text-main"
+                        onClick={() => setShowWeapons(!showWeapons)}
+                        aria-expanded={showWeapons}
+                        aria-controls="weapons-section"
+                      >
+                        {showWeapons ? <FiChevronDown /> : <FiChevronRight />}
+                        <h6>Weapons</h6>
+                        <span className="text-xs bg-muted/20 text-muted-foreground border border-border rounded-full px-2 py-0.5">{op.weapons?.length ?? 0}</span>
+                      </button>
+                      <button
+                        className="text-main disabled:text-muted p-1 border border-main rounded hover:bg-muted/20"
+                        onClick={() => addWeapon(op)}
+                        disabled={(op.weapons?.length ?? 0) >= MAXWEAPONS}
+                        title={(op.weapons?.length ?? 0) >= MAXWEAPONS ? `Maximum of ${MAXWEAPONS} weapons reached` : ''}
+                      >
+                        <FiPlus aria-label="Add Weapon" />
+                      </button>
+                    </div>
+                    {showWeapons && (
+                      <div id="weapons-section" className="space-y-2">
+                        {(op.weapons ?? []).map((w) => (
+                          <div
+                            key={w.wepId}
+                            id={`wep-${w.wepId}`}
+                            className="border border-border rounded p-2"
+                            draggable
+                            onDragStart={() => { dragWepId.current = w.wepId }}
+                            onDragOver={(e) => { e.preventDefault() }}
+                            onDrop={() => handleDropWeapon(op, w.wepId)}
+                            title="Drag to reorder"
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-start">
                               <div className="sm:col-span-2">
-                                <Label className="mb-1 sm:hidden">Profile</Label>
+                                <Label>Name</Label>
                                 <Input
-                                  className="my-0"
-                                  value={p.profileName}
+                                  value={w.wepName}
                                   maxLength={250}
                                   onChange={(e) => setTeam({
                                     ...team,
                                     opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
                                       ...o,
-                                      weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? {
-                                        ...ww,
-                                        profiles: (ww.profiles ?? []).map(pp => pp.wepprofileId === p.wepprofileId ? { ...pp, profileName: e.target.value } : pp)
-                                      } : ww)
+                                      weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? { ...ww, wepName: e.target.value } : ww)
                                     } : o)
                                   })}
-                                  onBlur={() => saveWeaponProfile(p)}
+                                  onBlur={() => saveWeapon(w)}
                                 />
                               </div>
                               <div>
-                                <Label className="mb-1 sm:hidden">ATK</Label>
-                                <Input
-                                  className="w-16 my-0"
-                                  value={p.ATK}
-                                  maxLength={10}
-                                  onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                    ...o,
-                                    weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? {
-                                      ...ww,
-                                      profiles: (ww.profiles ?? []).map(pp => pp.wepprofileId === p.wepprofileId ? { ...pp, ATK: e.target.value } : pp)
-                                    } : ww)
-                                  } : o) })}
-                                  onBlur={() => saveWeaponProfile(p)}
-                                />
+                                <Label>Type</Label>
+                                <select
+                                  className="bg-card text-foreground border border-border rounded p-1 my-2 focus:outline-none focus:ring-2 focus:ring-main w-full"
+                                  value={w.wepType}
+                                  onChange={(e) => {
+                                    const v = e.target.value
+                                    setTeam({
+                                      ...team,
+                                      opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                        ...o,
+                                        weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? { ...ww, wepType: v } : ww)
+                                      } : o)
+                                    })
+                                    saveWeapon({ ...w, wepType: v })
+                                  }}
+                                >
+                                  {['M','R','E','P'].map(t => (
+                                    <option key={t} value={t}>{t}</option>
+                                  ))}
+                                </select>
                               </div>
-                              <div>
-                                <Label className="mb-1 sm:hidden">HIT</Label>
-                                <Input
-                                  className="w-16 my-0"
-                                  value={p.HIT}
-                                  maxLength={10}
-                                  onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                    ...o,
-                                    weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? {
-                                      ...ww,
-                                      profiles: (ww.profiles ?? []).map(pp => pp.wepprofileId === p.wepprofileId ? { ...pp, HIT: e.target.value } : pp)
-                                    } : ww)
-                                  } : o) })}
-                                  onBlur={() => saveWeaponProfile(p)}
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={w.isDefault}
+                                  onChange={(e) => {
+                                    const checked = (e.target as HTMLInputElement).checked
+                                    setTeam({
+                                      ...team,
+                                      opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                        ...o,
+                                        weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? { ...ww, isDefault: checked } : ww)
+                                      } : o)
+                                    })
+                                    saveWeapon({ ...w, isDefault: checked })
+                                  }}
                                 />
+                                <Label className="whitespace-nowrap">Default</Label>
                               </div>
-                              <div>
-                                <Label className="mb-1 sm:hidden">DMG</Label>
-                                <Input
-                                  className="w-16 my-0"
-                                  value={p.DMG}
-                                  maxLength={10}
-                                  onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                    ...o,
-                                    weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? {
-                                      ...ww,
-                                      profiles: (ww.profiles ?? []).map(pp => pp.wepprofileId === p.wepprofileId ? { ...pp, DMG: e.target.value } : pp)
-                                    } : ww)
-                                  } : o) })}
-                                  onBlur={() => saveWeaponProfile(p)}
-                                />
-                              </div>
-                              <div className="sm:col-span-2">
-                                <Label className="mb-1 sm:hidden">WR</Label>
-                                <Input
-                                  className="my-0"
-                                  value={p.WR}
-                                  maxLength={250}
-                                  onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                    ...o,
-                                    weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? {
-                                      ...ww,
-                                      profiles: (ww.profiles ?? []).map(pp => pp.wepprofileId === p.wepprofileId ? { ...pp, WR: e.target.value } : pp)
-                                    } : ww)
-                                  } : o) })}
-                                  onBlur={() => saveWeaponProfile(p)}
-                                />
-                              </div>
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-start justify-end gap-2 sm:col-span-1">
                                 <button
                                   className="p-1 border border-main rounded hover:bg-muted/20"
                                   aria-label="Drag to reorder"
                                   title="Drag to reorder"
-                                  onMouseDown={() => { /* visual only, drag is on row */ }}
+                                  onMouseDown={(e) => { /* purely visual, drag is on card */ }}
                                 >
                                   <FiMove />
                                 </button>
                                 <button
                                   className="text-destructive p-1 border border-main rounded hover:bg-muted/20"
-                                  disabled={(w.profiles?.length ?? 0) <= 1}
-                                  title={(w.profiles?.length ?? 0) <= 1 ? 'Weapon must have at least one profile' : 'Delete Profile'}
-                                  onClick={() => setPendingDelete({ kind: 'wepprofile', op, wep: w, profile: p })}
+                                  title="Delete Weapon"
+                                  onClick={() => setPendingDelete({ kind: 'weapon', op, wep: w })}
                                 >
-                                  <FiTrash aria-label="Delete Profile" />
+                                  <FiTrash aria-label="Delete Weapon" />
                                 </button>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                            {/* Profiles */}
+                            <div className="mt-2">
+                              <div className="space-y-1">
+                                {/* Column headers for profiles with add button on the same line */}
+                                <div className="hidden sm:grid grid-cols-8 gap-1 items-center text-muted-foreground">
+                                  <div className="col-span-2"><Label className="m-0">Profile</Label></div>
+                                  <div><Label className="m-0">ATK</Label></div>
+                                  <div><Label className="m-0">HIT</Label></div>
+                                  <div><Label className="m-0">DMG</Label></div>
+                                  <div className="col-span-2"><Label className="m-0">WR</Label></div>
+                                  <div className="flex justify-end">
+                                    <button
+                                      className="text-main disabled:text-muted p-1 border border-main rounded hover:bg-muted/20"
+                                      onClick={() => addWeaponProfile(op, w)}
+                                      disabled={(w.profiles?.length ?? 0) >= MAXWEAPONPROFILES}
+                                      title={(w.profiles?.length ?? 0) >= MAXWEAPONPROFILES ? `Maximum of ${MAXWEAPONPROFILES} profiles reached` : ''}
+                                    >
+                                      <FiPlus aria-label="Add Profile" />
+                                    </button>
+                                  </div>
+                                </div>
 
-            {/* Abilities */}
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-2">
-                <button
-                  className="flex items-center gap-2 text-foreground hover:text-main"
-                  onClick={() => setShowAbilities(!showAbilities)}
-                  aria-expanded={showAbilities}
-                  aria-controls="abilities-section"
-                >
-                  {showAbilities ? <FiChevronDown /> : <FiChevronRight />}
-                  <h6>Abilities</h6>
-                  <span className="text-xs bg-muted/20 text-muted-foreground border border-border rounded-full px-2 py-0.5">{op.abilities?.length ?? 0}</span>
-                </button>
-                <button
-                  className="text-main p-1 border border-main rounded hover:bg-muted/20"
-                  onClick={() => addAbility(op)}
-                >
-                  <FiPlus aria-label="Add Ability" />
-                </button>
-              </div>
-              {showAbilities && (
-                <div id="abilities-section" className="space-y-2">
-                  {(op.abilities ?? []).map((ab) => (
-                    <div key={ab.abilityId} id={`ab-${ab.abilityId}`} className="border border-border rounded p-2">
-                      {/* Top row: Name, AP, Delete */}
-                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-start">
-                        <div className="sm:col-span-3">
-                          <Label>Name</Label>
-                          <Input
-                            value={ab.abilityName}
-                            maxLength={250}
-                            onChange={(e) => setTeam({
-                              ...team,
-                              opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                ...o,
-                                abilities: (o.abilities ?? []).map(a => a.abilityId === ab.abilityId ? { ...a, abilityName: e.target.value } : a)
-                              } : o)
-                            })}
-                            onBlur={() => saveAbility(ab)}
-                          />
-                        </div>
-                        <div>
-                          <Label>AP</Label>
-                          <Input
-                            type="number"
-                            value={ab.AP ?? ''}
-                            onChange={(e) => {
-                              const val = e.target.value
-                              const num = val === '' ? NaN : Number(val)
-                              setTeam({
-                                ...team,
-                                opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                  ...o,
-                                  abilities: (o.abilities ?? []).map(a => a.abilityId === ab.abilityId ? { ...a, AP: (val === '' || Number.isNaN(num)) ? undefined : num } : a)
-                                } : o)
-                              })
-                            }}
-                            onBlur={() => saveAbility(ab)}
-                          />
-                        </div>
-                        <div className="text-right sm:col-span-1 sm:self-start pt-1">
-                          <button
-                            className="text-destructive p-1 border border-main rounded hover:bg-muted/20"
-                            title="Delete Ability"
-                            onClick={() => setPendingDelete({ kind: 'ability', op, ab })}
-                          >
-                            <FiTrash aria-label="Delete Ability" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Bottom row: Description editor full width */}
-                      <div className="mt-2">
-                        <div className="flex items-center gap-2">
-                          <Label>Description</Label>
-                          <a
-                            href="https://www.markdownguide.org/basic-syntax/"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-muted-foreground hover:text-main"
-                            aria-label="Markdown help"
-                          >
-                            <FiHelpCircle />
-                          </a>
-                        </div>
-                        <div className="custom-md-editor">
-                          <MDEditor
-                            value={ab.description}
-                            onChange={(val) => {
-                              const v = val || ''
-                              setTeam({
-                                ...team,
-                                opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                  ...o,
-                                  abilities: (o.abilities ?? []).map(a => a.abilityId === ab.abilityId ? { ...a, description: v } : a)
-                                } : o)
-                              })
-                              // debounce save per-ability
-                              const id = ab.abilityId
-                              if (abilityTimers.current[id]) clearTimeout(abilityTimers.current[id]!)
-                              abilityTimers.current[id] = setTimeout(() => saveAbility({ ...ab, description: v }), 800)
-                            }}
-                            preview="edit"
-                            data-color-mode="dark"
-                            style={{ minHeight: 120 }}
-                            commands={[
-                              commands.bold,
-                              commands.italic,
-                              commands.hr,
-                              commands.divider,
-                              commands.quote,
-                              commands.unorderedListCommand,
-                              commands.orderedListCommand,
-                              commands.table,
-                            ]}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Options */}
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-2">
-                <button
-                  className="flex items-center gap-2 text-foreground hover:text-main"
-                  onClick={() => setShowOptions(!showOptions)}
-                  aria-expanded={showOptions}
-                  aria-controls="options-section"
-                >
-                  {showOptions ? <FiChevronDown /> : <FiChevronRight />}
-                  <h6>Options</h6>
-                  <span className="text-xs bg-muted/20 text-muted-foreground border border-border rounded-full px-2 py-0.5">{op.options?.length ?? 0}</span>
-                </button>
-                <button
-                  className="text-main p-1 border border-main rounded hover:bg-muted/20"
-                  onClick={() => addOption(op)}
-                >
-                  <FiPlus aria-label="Add Option" />
-                </button>
-              </div>
-              {showOptions && (
-                <div id="options-section" className="space-y-2">
-                  {(op.options ?? []).map((opt) => (
-                    <div key={opt.optionId} id={`opt-${opt.optionId}`} className="border border-border rounded p-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 items-start">
-                        <div className="sm:col-span-3">
-                          <Label>Name</Label>
-                          <Input
-                            value={opt.optionName}
-                            maxLength={50}
-                            onChange={(e) => setTeam({
-                              ...team,
-                              opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                ...o,
-                                options: (o.options ?? []).map(oo => oo.optionId === opt.optionId ? { ...oo, optionName: e.target.value } : oo)
-                              } : o)
-                            })}
-                            onBlur={() => saveOption(opt)}
-                          />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <div className="flex items-center justify-between">
-                            <Label className="m-0">Effects</Label>
-                            <button
-                              type="button"
-                              className="text-muted hover:text-foreground p-1"
-                              title="Effects help"
-                              onClick={() => setShowEffectshelp(true)}
-                              aria-label="Open effects help"
-                            >
-                              <FiHelpCircle />
-                            </button>
+                                {(w.profiles ?? []).map((p) => (
+                                  <div
+                                    key={p.wepprofileId}
+                                    className="grid grid-cols-1 sm:grid-cols-8 gap-1 sm:items-center items-start"
+                                    draggable
+                                    onDragStart={() => { dragProfileId.current = p.wepprofileId }}
+                                    onDragOver={(e) => { e.preventDefault() }}
+                                    onDrop={() => handleDropProfile(op, w, p.wepprofileId)}
+                                    title="Drag to reorder"
+                                  >
+                                    <div className="sm:col-span-2">
+                                      <Label className="mb-1 sm:hidden">Profile</Label>
+                                      <Input
+                                        className="my-0"
+                                        value={p.profileName}
+                                        maxLength={250}
+                                        onChange={(e) => setTeam({
+                                          ...team,
+                                          opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                            ...o,
+                                            weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? {
+                                              ...ww,
+                                              profiles: (ww.profiles ?? []).map(pp => pp.wepprofileId === p.wepprofileId ? { ...pp, profileName: e.target.value } : pp)
+                                            } : ww)
+                                          } : o)
+                                        })}
+                                        onBlur={() => saveWeaponProfile(p)}
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="mb-1 sm:hidden">ATK</Label>
+                                      <Input
+                                        className="w-16 my-0"
+                                        value={p.ATK}
+                                        maxLength={10}
+                                        onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                          ...o,
+                                          weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? {
+                                            ...ww,
+                                            profiles: (ww.profiles ?? []).map(pp => pp.wepprofileId === p.wepprofileId ? { ...pp, ATK: e.target.value } : pp)
+                                          } : ww)
+                                        } : o) })}
+                                        onBlur={() => saveWeaponProfile(p)}
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="mb-1 sm:hidden">HIT</Label>
+                                      <Input
+                                        className="w-16 my-0"
+                                        value={p.HIT}
+                                        maxLength={10}
+                                        onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                          ...o,
+                                          weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? {
+                                            ...ww,
+                                            profiles: (ww.profiles ?? []).map(pp => pp.wepprofileId === p.wepprofileId ? { ...pp, HIT: e.target.value } : pp)
+                                          } : ww)
+                                        } : o) })}
+                                        onBlur={() => saveWeaponProfile(p)}
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="mb-1 sm:hidden">DMG</Label>
+                                      <Input
+                                        className="w-16 my-0"
+                                        value={p.DMG}
+                                        maxLength={10}
+                                        onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                          ...o,
+                                          weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? {
+                                            ...ww,
+                                            profiles: (ww.profiles ?? []).map(pp => pp.wepprofileId === p.wepprofileId ? { ...pp, DMG: e.target.value } : pp)
+                                          } : ww)
+                                        } : o) })}
+                                        onBlur={() => saveWeaponProfile(p)}
+                                      />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                      <Label className="mb-1 sm:hidden">WR</Label>
+                                      <Input
+                                        className="my-0"
+                                        value={p.WR}
+                                        maxLength={250}
+                                        onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                          ...o,
+                                          weapons: (o.weapons ?? []).map(ww => ww.wepId === w.wepId ? {
+                                            ...ww,
+                                            profiles: (ww.profiles ?? []).map(pp => pp.wepprofileId === p.wepprofileId ? { ...pp, WR: e.target.value } : pp)
+                                          } : ww)
+                                        } : o) })}
+                                        onBlur={() => saveWeaponProfile(p)}
+                                      />
+                                    </div>
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button
+                                        className="p-1 border border-main rounded hover:bg-muted/20"
+                                        aria-label="Drag to reorder"
+                                        title="Drag to reorder"
+                                        onMouseDown={() => { /* visual only, drag is on row */ }}
+                                      >
+                                        <FiMove />
+                                      </button>
+                                      <button
+                                        className="text-destructive p-1 border border-main rounded hover:bg-muted/20"
+                                        disabled={(w.profiles?.length ?? 0) <= 1}
+                                        title={(w.profiles?.length ?? 0) <= 1 ? 'Weapon must have at least one profile' : 'Delete Profile'}
+                                        onClick={() => setPendingDelete({ kind: 'wepprofile', op, wep: w, profile: p })}
+                                      >
+                                        <FiTrash aria-label="Delete Profile" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           </div>
-                          <Input
-                            className="mt-0 mb-0"
-                            value={opt.effects || ''}
-                            maxLength={50}
-                            onChange={(e) => setTeam({
-                              ...team,
-                              opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                ...o,
-                                options: (o.options ?? []).map(oo => oo.optionId === opt.optionId ? { ...oo, effects: e.target.value } : oo)
-                              } : o)
-                            })}
-                            onBlur={() => saveOption(opt)}
-                          />
-                        </div>
-                        <div className="text-right sm:self-start pt-1">
-                          <button
-                            className="text-destructive p-1 border border-main rounded hover:bg-muted/20"
-                            title="Delete Option"
-                            onClick={() => setPendingDelete({ kind: 'option', op, option: opt })}
-                          >
-                            <FiTrash aria-label="Delete Option" />
-                          </button>
-                        </div>
+                        ))}
                       </div>
-                      <div className="mt-2">
-                        <div className="flex items-center gap-2">
-                          <Label>Description</Label>
-                          <a
-                            href="https://www.markdownguide.org/basic-syntax/"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-muted-foreground hover:text-main"
-                            aria-label="Markdown help"
-                          >
-                            <FiHelpCircle />
-                          </a>
-                        </div>
-                        <div className="custom-md-editor">
-                          <MDEditor
-                            value={opt.description || ''}
-                            onChange={(val) => {
-                              const v = val || ''
-                              setTeam({
-                                ...team,
-                                opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
-                                  ...o,
-                                  options: (o.options ?? []).map(oo => oo.optionId === opt.optionId ? { ...oo, description: v } : oo)
-                                } : o)
-                              })
-                              const id = opt.optionId
-                              if (optionTimers.current[id]) clearTimeout(optionTimers.current[id]!)
-                              optionTimers.current[id] = setTimeout(() => saveOption({ ...opt, description: v }), 800)
-                            }}
-                            preview="edit"
-                            data-color-mode="dark"
-                            style={{ minHeight: 120 }}
-                            commands={[
-                              commands.bold,
-                              commands.italic,
-                              commands.hr,
-                              commands.divider,
-                              commands.quote,
-                              commands.unorderedListCommand,
-                              commands.orderedListCommand,
-                              commands.table,
-                            ]}
-                          />
-                        </div>
-                      </div>
+                    )}
+                  </div>
+
+                  {/* Abilities */}
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <button
+                        className="flex items-center gap-2 text-foreground hover:text-main"
+                        onClick={() => setShowAbilities(!showAbilities)}
+                        aria-expanded={showAbilities}
+                        aria-controls="abilities-section"
+                      >
+                        {showAbilities ? <FiChevronDown /> : <FiChevronRight />}
+                        <h6>Abilities</h6>
+                        <span className="text-xs bg-muted/20 text-muted-foreground border border-border rounded-full px-2 py-0.5">{op.abilities?.length ?? 0}</span>
+                      </button>
+                      <button
+                        className="text-main p-1 border border-main rounded hover:bg-muted/20"
+                        onClick={() => addAbility(op)}
+                      >
+                        <FiPlus aria-label="Add Ability" />
+                      </button>
                     </div>
-                  ))}
+                    {showAbilities && (
+                      <div id="abilities-section" className="space-y-2">
+                        {(op.abilities ?? []).map((ab) => (
+                          <div key={ab.abilityId} id={`ab-${ab.abilityId}`} className="border border-border rounded p-2">
+                            {/* Top row: Name, AP, Delete */}
+                            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-start">
+                              <div className="sm:col-span-3">
+                                <Label>Name</Label>
+                                <Input
+                                  value={ab.abilityName}
+                                  maxLength={250}
+                                  onChange={(e) => setTeam({
+                                    ...team,
+                                    opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                      ...o,
+                                      abilities: (o.abilities ?? []).map(a => a.abilityId === ab.abilityId ? { ...a, abilityName: e.target.value } : a)
+                                    } : o)
+                                  })}
+                                  onBlur={() => saveAbility(ab)}
+                                />
+                              </div>
+                              <div>
+                                <Label>AP</Label>
+                                <Input
+                                  type="number"
+                                  value={ab.AP ?? ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value
+                                    const num = val === '' ? NaN : Number(val)
+                                    setTeam({
+                                      ...team,
+                                      opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                        ...o,
+                                        abilities: (o.abilities ?? []).map(a => a.abilityId === ab.abilityId ? { ...a, AP: (val === '' || Number.isNaN(num)) ? undefined : num } : a)
+                                      } : o)
+                                    })
+                                  }}
+                                  onBlur={() => saveAbility(ab)}
+                                />
+                              </div>
+                              <div className="text-right sm:col-span-1 sm:self-start pt-1">
+                                <button
+                                  className="text-destructive p-1 border border-main rounded hover:bg-muted/20"
+                                  title="Delete Ability"
+                                  onClick={() => setPendingDelete({ kind: 'ability', op, ab })}
+                                >
+                                  <FiTrash aria-label="Delete Ability" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Bottom row: Description editor full width */}
+                            <div className="mt-2">
+                              <div className="flex items-center gap-2">
+                                <Label>Description</Label>
+                                <a
+                                  href="https://www.markdownguide.org/basic-syntax/"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-muted-foreground hover:text-main"
+                                  aria-label="Markdown help"
+                                >
+                                  <FiHelpCircle />
+                                </a>
+                              </div>
+                              <div className="custom-md-editor">
+                                <MDEditor
+                                  value={ab.description}
+                                  onChange={(val) => {
+                                    const v = val || ''
+                                    setTeam({
+                                      ...team,
+                                      opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                        ...o,
+                                        abilities: (o.abilities ?? []).map(a => a.abilityId === ab.abilityId ? { ...a, description: v } : a)
+                                      } : o)
+                                    })
+                                    // debounce save per-ability
+                                    const id = ab.abilityId
+                                    if (abilityTimers.current[id]) clearTimeout(abilityTimers.current[id]!)
+                                    abilityTimers.current[id] = setTimeout(() => saveAbility({ ...ab, description: v }), 800)
+                                  }}
+                                  preview="edit"
+                                  data-color-mode="dark"
+                                  style={{ minHeight: 120 }}
+                                  commands={[
+                                    commands.bold,
+                                    commands.italic,
+                                    commands.hr,
+                                    commands.divider,
+                                    commands.quote,
+                                    commands.unorderedListCommand,
+                                    commands.orderedListCommand,
+                                    commands.table,
+                                  ]}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Options */}
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <button
+                        className="flex items-center gap-2 text-foreground hover:text-main"
+                        onClick={() => setShowOptions(!showOptions)}
+                        aria-expanded={showOptions}
+                        aria-controls="options-section"
+                      >
+                        {showOptions ? <FiChevronDown /> : <FiChevronRight />}
+                        <h6>Options</h6>
+                        <span className="text-xs bg-muted/20 text-muted-foreground border border-border rounded-full px-2 py-0.5">{op.options?.length ?? 0}</span>
+                      </button>
+                      <button
+                        className="text-main p-1 border border-main rounded hover:bg-muted/20"
+                        onClick={() => addOption(op)}
+                      >
+                        <FiPlus aria-label="Add Option" />
+                      </button>
+                    </div>
+                    {showOptions && (
+                      <div id="options-section" className="space-y-2">
+                        {(op.options ?? []).map((opt) => (
+                          <div key={opt.optionId} id={`opt-${opt.optionId}`} className="border border-border rounded p-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 items-start">
+                              <div className="sm:col-span-3">
+                                <Label>Name</Label>
+                                <Input
+                                  value={opt.optionName}
+                                  maxLength={50}
+                                  onChange={(e) => setTeam({
+                                    ...team,
+                                    opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                      ...o,
+                                      options: (o.options ?? []).map(oo => oo.optionId === opt.optionId ? { ...oo, optionName: e.target.value } : oo)
+                                    } : o)
+                                  })}
+                                  onBlur={() => saveOption(opt)}
+                                />
+                              </div>
+                              <div className="sm:col-span-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="m-0">Effects</Label>
+                                  <button
+                                    type="button"
+                                    className="text-muted hover:text-foreground p-1"
+                                    title="Effects help"
+                                    onClick={() => setShowEffectshelp(true)}
+                                    aria-label="Open effects help"
+                                  >
+                                    <FiHelpCircle />
+                                  </button>
+                                </div>
+                                <Input
+                                  className="mt-0 mb-0"
+                                  value={opt.effects || ''}
+                                  maxLength={50}
+                                  onChange={(e) => setTeam({
+                                    ...team,
+                                    opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                      ...o,
+                                      options: (o.options ?? []).map(oo => oo.optionId === opt.optionId ? { ...oo, effects: e.target.value } : oo)
+                                    } : o)
+                                  })}
+                                  onBlur={() => saveOption(opt)}
+                                />
+                              </div>
+                              <div className="text-right sm:self-start pt-1">
+                                <button
+                                  className="text-destructive p-1 border border-main rounded hover:bg-muted/20"
+                                  title="Delete Option"
+                                  onClick={() => setPendingDelete({ kind: 'option', op, option: opt })}
+                                >
+                                  <FiTrash aria-label="Delete Option" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="mt-2">
+                              <div className="flex items-center gap-2">
+                                <Label>Description</Label>
+                                <a
+                                  href="https://www.markdownguide.org/basic-syntax/"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-muted-foreground hover:text-main"
+                                  aria-label="Markdown help"
+                                >
+                                  <FiHelpCircle />
+                                </a>
+                              </div>
+                              <div className="custom-md-editor">
+                                <MDEditor
+                                  value={opt.description || ''}
+                                  onChange={(val) => {
+                                    const v = val || ''
+                                    setTeam({
+                                      ...team,
+                                      opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? {
+                                        ...o,
+                                        options: (o.options ?? []).map(oo => oo.optionId === opt.optionId ? { ...oo, description: v } : oo)
+                                      } : o)
+                                    })
+                                    const id = opt.optionId
+                                    if (optionTimers.current[id]) clearTimeout(optionTimers.current[id]!)
+                                    optionTimers.current[id] = setTimeout(() => saveOption({ ...opt, description: v }), 800)
+                                  }}
+                                  preview="edit"
+                                  data-color-mode="dark"
+                                  style={{ minHeight: 120 }}
+                                  commands={[
+                                    commands.bold,
+                                    commands.italic,
+                                    commands.hr,
+                                    commands.divider,
+                                    commands.quote,
+                                    commands.unorderedListCommand,
+                                    commands.orderedListCommand,
+                                    commands.table,
+                                  ]}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+              )
+            })()}
           </div>
-          )
-          })()}
         </div>
-      </div>
       )}
 
       {/* Portrait */}
@@ -2472,13 +2473,13 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
         <Modal
           title={
             pendingDelete.kind === 'optype' ? `Delete ${pendingDelete.op.opTypeName}` :
-            pendingDelete.kind === 'weapon' ? `Delete ${pendingDelete.wep.wepName}` :
-            pendingDelete.kind === 'wepprofile' ? `Delete profile ${pendingDelete.profile.profileName}` :
-            pendingDelete.kind === 'ability' ? `Delete ${pendingDelete.ab.abilityName}` :
-            pendingDelete.kind === 'option' ? `Delete ${pendingDelete.option.optionName}` :
-            pendingDelete.kind === 'equipment' ? `Delete ${pendingDelete.eq.eqName}` :
-            pendingDelete.kind === 'ploy' ? `Delete ${pendingDelete.ploy.ployName}` :
-            'Delete'
+              pendingDelete.kind === 'weapon' ? `Delete ${pendingDelete.wep.wepName}` :
+                pendingDelete.kind === 'wepprofile' ? `Delete profile ${pendingDelete.profile.profileName}` :
+                  pendingDelete.kind === 'ability' ? `Delete ${pendingDelete.ab.abilityName}` :
+                    pendingDelete.kind === 'option' ? `Delete ${pendingDelete.option.optionName}` :
+                      pendingDelete.kind === 'equipment' ? `Delete ${pendingDelete.eq.eqName}` :
+                        pendingDelete.kind === 'ploy' ? `Delete ${pendingDelete.ploy.ployName}` :
+                          'Delete'
           }
           onClose={() => { if (!deleting) setPendingDelete(null) }}
           footer={
@@ -2493,36 +2494,36 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
                   setDeleteError('')
                   try {
                     switch (pendingDelete.kind) {
-                      case 'optype': {
-                        const remaining = team.opTypes.filter(o => o.opTypeId !== pendingDelete.op.opTypeId)
-                        await deleteOpType(pendingDelete.op.opTypeId)
-                        setSelectedOpTypeId(remaining[0]?.opTypeId ?? '')
-                        break
-                      }
-                      case 'weapon': {
-                        await deleteWeapon(pendingDelete.op, pendingDelete.wep.wepId)
-                        break
-                      }
-                      case 'wepprofile': {
-                        await deleteWeaponProfile(pendingDelete.op, pendingDelete.wep, pendingDelete.profile.wepprofileId)
-                        break
-                      }
-                      case 'ability': {
-                        await deleteAbility(pendingDelete.op, pendingDelete.ab.abilityId)
-                        break
-                      }
-                      case 'option': {
-                        await deleteOption(pendingDelete.op, pendingDelete.option.optionId)
-                        break
-                      }
-                      case 'equipment': {
-                        await deleteEquipment(pendingDelete.eq.eqId)
-                        break
-                      }
-                      case 'ploy': {
-                        await deletePloy(pendingDelete.ploy.ployId)
-                        break
-                      }
+                    case 'optype': {
+                      const remaining = team.opTypes.filter(o => o.opTypeId !== pendingDelete.op.opTypeId)
+                      await deleteOpType(pendingDelete.op.opTypeId)
+                      setSelectedOpTypeId(remaining[0]?.opTypeId ?? '')
+                      break
+                    }
+                    case 'weapon': {
+                      await deleteWeapon(pendingDelete.op, pendingDelete.wep.wepId)
+                      break
+                    }
+                    case 'wepprofile': {
+                      await deleteWeaponProfile(pendingDelete.op, pendingDelete.wep, pendingDelete.profile.wepprofileId)
+                      break
+                    }
+                    case 'ability': {
+                      await deleteAbility(pendingDelete.op, pendingDelete.ab.abilityId)
+                      break
+                    }
+                    case 'option': {
+                      await deleteOption(pendingDelete.op, pendingDelete.option.optionId)
+                      break
+                    }
+                    case 'equipment': {
+                      await deleteEquipment(pendingDelete.eq.eqId)
+                      break
+                    }
+                    case 'ploy': {
+                      await deletePloy(pendingDelete.ploy.ployId)
+                      break
+                    }
                     }
                     setPendingDelete(null)
                   } catch (err: any) {
@@ -2619,7 +2620,7 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
               The Effects field is for brief notes about what the equipment does. This is not a full description, which can be added in the Description field below.
             </p>
             <Markdown>
-{`Each individual effect has two parts separated by a single pipe: \`[part1]|[part2]\`. Chain multiple effects together by separating the individual effect strings with a caret (\`^\`).
+              {`Each individual effect has two parts separated by a single pipe: \`[part1]|[part2]\`. Chain multiple effects together by separating the individual effect strings with a caret (\`^\`).
 
 Effects can be:
 - Weapon mod
