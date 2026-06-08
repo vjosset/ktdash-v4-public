@@ -1,11 +1,11 @@
 //@ts-nocheck
-import { genId } from '@/lib/utils/utils';
-import { RosterRepository } from '@/src/repositories/roster.repository';
-import { Equipment, Option, Roster, Weapon } from '@/types';
-import fs from 'fs/promises';
-import path from 'path';
-import { OpService } from './op.service';
-import { UserService } from './user.service';
+import { genId } from '@/lib/utils/utils'
+import { RosterRepository } from '@/src/repositories/roster.repository'
+import { Equipment, Option, Roster, Weapon } from '@/types'
+import fs from 'fs/promises'
+import path from 'path'
+import { OpService } from './op.service'
+import { UserService } from './user.service'
 
 export class RosterService {
   private static repository = new RosterRepository()
@@ -23,13 +23,14 @@ export class RosterService {
     // Hard-coded list of OpTypeIDs that aren't affected by Equipment
     //  E.g. Grots and Squigs for Kommandos, Bomb Squig for Wrecka Krew
     const opTypesNoEq = [
-      "ORK-KOM-GROT",
-      "ORK-KOM-SQUIG",
-      "ORK-WK-SQUIG"
+      'ORK-KOM-GROT',
+      'ORK-KOM-SQUIG',
+      'ORK-WK-SQUIG'
     ]
+    const isNemesisOp = (op) => op.opTypeId.startsWith('SPEC-NEM-')
 
     // Get the selected equipments for this roster
-    roster.equipments = [];
+    roster.equipments = []
     roster?.killteam?.equipments.map((eq, idx) => {
       // Check if this equipment ID is in the current roster's eqIds
       if (roster.eqIds?.includes(eq.eqId)) {
@@ -65,10 +66,10 @@ export class RosterService {
             optionName: 'Eq: ' + eq.eqName,
             description: eq.description,
             effects: nonWeaponEffects.join('^')
-          });
-          roster?.ops?.map((op) => !opTypesNoEq.includes(op.opTypeId) && (op.options = op.options ?? []))
+          })
+          roster?.ops?.map((op) => !opTypesNoEq.includes(op.opTypeId) && !isNemesisOp(op) && (op.options = op.options ?? []))
           roster?.ops?.map((op) => {
-            if (opTypesNoEq.includes(op.opTypeId)) return
+            if (opTypesNoEq.includes(op.opTypeId) || isNemesisOp(op)) return
             if (optypeIds.length > 0 && !optypeIds.includes(op.opTypeId)) return
             op.options?.push(option)
           })
@@ -99,15 +100,11 @@ export class RosterService {
           })
 
           roster?.ops?.map((op) => {
-            if (opTypesNoEq.includes(op.opTypeId)) {
-              return;
-            }
-            if (optypeIds.length > 0 && !optypeIds.includes(op.opTypeId)) {
-              return;
-            }
-            op.weapons = op.weapons ?? [];
+            if (opTypesNoEq.includes(op.opTypeId) || isNemesisOp(op)) return
+            if (optypeIds.length > 0 && !optypeIds.includes(op.opTypeId)) return
+            op.weapons = op.weapons ?? []
             // Deep-copy the weapon for each operative
-            op.weapons.push(new Weapon(structuredClone(wep)));
+            op.weapons.push(new Weapon(structuredClone(wep)))
           })
         })
       }
@@ -122,7 +119,7 @@ export class RosterService {
   static async getRandomSpotlight(): Promise<Roster | null> {
     const rosterId = await this.repository.getRandomSpotlightRosterId()
     if (!rosterId) return null
-    return await this.getRoster(rosterId);
+    return await this.getRoster(rosterId)
   }
 
   static async createRoster(data: Partial<Roster>): Promise<Roster | null> {
@@ -163,14 +160,14 @@ export class RosterService {
     const roster = await this.getRosterRow(rosterId)
 
     // Delete all images/portraits for this roster
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads')
     const dirName = path.join(uploadDir, `user_${roster.userId}`, `roster_${rosterId}`)
     try {
       await fs.rm(dirName, { recursive: true, force: true })
     }
     catch {
       // Something went wrong - Just log it and move on
-      console.error("Could not delete portraits for roster", rosterId)
+      console.error('Could not delete portraits for roster', rosterId)
     }
 
     await this.repository.deleteRoster(rosterId)
@@ -305,7 +302,7 @@ export class RosterService {
     const updatedRoster = await this.updateRoster(rosterId, { hasCustomPortrait: false, portraitUpdatedAt: new Date() })
 
     try {
-      const uploadDir = process.env.UPLOADS_DIR!;
+      const uploadDir = process.env.UPLOADS_DIR!
       const filePath = path.resolve(
         uploadDir,
         `user_${roster.userId}`,
