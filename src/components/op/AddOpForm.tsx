@@ -20,6 +20,7 @@ type AddOpFormProps = {
 
 export default function AddOpForm({ roster: roster, onOpAdded, allWeaponRules }: AddOpFormProps) {
   const [showAddOpModal, setShowAddOpModal] = useState(false)
+  const [showNemesisModal, setShowNemesisModal] = useState(false)
   const { data: session } = useSession()
   const userName = session?.user?.userName
 
@@ -29,6 +30,10 @@ export default function AddOpForm({ roster: roster, onOpAdded, allWeaponRules }:
     <div className="text-center my-auto noprint">
       <Button onClick={() => setShowAddOpModal(true)}>
         <h6>+ Add Operative</h6>
+      </Button>
+      <br/><br/>
+      <Button onClick={() => setShowNemesisModal(true)} variant="ghost">
+        <h6>+ Add Nemesis</h6>
       </Button>
       {showAddOpModal && (
         <OpEditorModal
@@ -40,7 +45,21 @@ export default function AddOpForm({ roster: roster, onOpAdded, allWeaponRules }:
           allWeaponRules={allWeaponRules ?? []}
           onSave={(updatedOp) => {
             setShowAddOpModal(false)
-            onOpAdded?.(updatedOp) // ✅ call parent with the new op
+            onOpAdded?.(updatedOp)
+          }}
+        />
+      )}
+      {showNemesisModal && (
+        <OpEditorModal
+          key="nemesis-modal"
+          isOpen={true}
+          rosterId={roster.rosterId}
+          killteamId="SPEC-NEM"
+          onClose={() => setShowNemesisModal(false)}
+          allWeaponRules={allWeaponRules ?? []}
+          onSave={(updatedOp) => {
+            setShowNemesisModal(false)
+            onOpAdded?.(updatedOp)
           }}
         />
       )}
