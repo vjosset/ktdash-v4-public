@@ -10,7 +10,7 @@ import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Area } from 'react-easy-crop'
-import { FiChevronDown, FiChevronRight, FiCopy, FiHelpCircle, FiMove, FiPlus, FiTrash } from 'react-icons/fi'
+import { FiChevronDown, FiChevronRight, FiCopy, FiDownload, FiHelpCircle, FiMove, FiPlus, FiTrash } from 'react-icons/fi'
 import { toast } from 'sonner'
 
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false })
@@ -80,6 +80,16 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
   const [showDeleteTeamModal, setShowDeleteTeamModal] = useState(false)
   const [showEffectshelp, setShowEffectshelp] = useState(false)
   const [cloningOpTypeId, setCloningOpTypeId] = useState<string | null>(null)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importStep, setImportStep] = useState<1 | 2>(1)
+  const [importKillteams, setImportKillteams] = useState<KillteamPlain[]>([])
+  const [loadingImportKillteams, setLoadingImportKillteams] = useState(false)
+  const [importKillteamFilter, setImportKillteamFilter] = useState('')
+  const [importSourceKillteamId, setImportSourceKillteamId] = useState('')
+  const [importSourceKillteam, setImportSourceKillteam] = useState<KillteamPlain | null>(null)
+  const [loadingImportSource, setLoadingImportSource] = useState(false)
+  const [importSourceOpTypeId, setImportSourceOpTypeId] = useState('')
+  const [importingOpType, setImportingOpType] = useState(false)
   const dragOpId = useRef<string | null>(null)
   const dragWepId = useRef<string | null>(null)
   const dragProfileId = useRef<string | null>(null)
@@ -727,6 +737,149 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
       toast.error(err?.message || 'Clone failed')
     } finally {
       setCloningOpTypeId(null)
+    }
+  }, [team.killteamId])
+
+  const openImportModal = useCallback(async () => {
+    setShowImportModal(true)
+    setImportStep(1)
+    setImportKillteamFilter('')
+    setImportSourceKillteamId('')
+    setImportSourceKillteam(null)
+    setImportSourceOpTypeId('')
+    setLoadingImportKillteams(true)
+    try {
+      const res = await fetch('/api/killteams?scope=standard')
+      const data = await res.json()
+      setImportKillteams(Array.isArray(data) ? data : [])
+    } catch {
+      toast.error('Failed to load killteams')
+    } finally {
+      setLoadingImportKillteams(false)
+    }
+  }, [])
+
+  const selectImportKillteam = useCallback(async (killteamId: string) => {
+    setImportSourceKillteamId(killteamId)
+    setImportSourceOpTypeId('')
+    setImportStep(2)
+    setLoadingImportSource(true)
+    try {
+      const res = await fetch(`/api/killteams/${killteamId}`)
+      const data = await res.json()
+      setImportSourceKillteam(data)
+    } catch {
+      toast.error('Failed to load killteam')
+    } finally {
+      setLoadingImportSource(false)
+    }
+  }, [])
+
+  const importOpType = useCallback(async (source: OpTypePlain) => {
+    const parseError = async (res: Response, fallback: string) => {
+      let message = fallback
+      try {
+        const data = await res.json()
+        if (typeof data?.error === 'string') message = data.error
+      } catch { /* ignore */ }
+      throw new Error(message)
+    }
+
+    setImportingOpType(true)
+    try {
+      const createRes = await fetch('/api/optypes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          killteamId: team.killteamId,
+          opTypeName: source.opTypeName,
+          MOVE: source.MOVE,
+          APL: source.APL,
+          SAVE: source.SAVE,
+          WOUNDS: source.WOUNDS,
+          keywords: source.keywords ?? '',
+          basesize: source.basesize ?? 32,
+          nameType: source.nameType ?? '',
+        })
+      })
+      if (!createRes.ok) await parseError(createRes, 'Failed to import operative type')
+      const created: OpTypePlain = await createRes.json()
+
+      const importedWeapons: WeaponPlain[] = []
+      for (const weapon of source.weapons ?? []) {
+        const weaponRes = await fetch('/api/weapons', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ opTypeId: created.opTypeId, wepName: weapon.wepName, wepType: weapon.wepType, isDefault: weapon.isDefault })
+        })
+        if (!weaponRes.ok) await parseError(weaponRes, `Failed to import weapon "${weapon.wepName}"`)
+        let newWeapon: WeaponPlain = await weaponRes.json()
+        const srcProfiles = weapon.profiles ?? []
+        const createdProfiles = newWeapon.profiles ?? []
+        const nextProfiles: WeaponProfilePlain[] = []
+
+        if (srcProfiles.length > 0 && createdProfiles[0]) {
+          const first = srcProfiles[0]
+          const patchRes = await fetch(`/api/weapon-profiles/${createdProfiles[0].wepprofileId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ profileName: first.profileName, ATK: first.ATK, HIT: first.HIT, DMG: first.DMG, WR: first.WR })
+          })
+          if (!patchRes.ok) await parseError(patchRes, `Failed to import profile "${first.profileName}"`)
+          nextProfiles.push(await patchRes.json())
+        } else if (createdProfiles.length > 0) {
+          nextProfiles.push(createdProfiles[0])
+        }
+
+        const startIndex = srcProfiles.length > 0 ? 1 : 0
+        for (let idx = startIndex; idx < srcProfiles.length; idx++) {
+          const profile = srcProfiles[idx]
+          const profileRes = await fetch('/api/weapon-profiles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wepId: newWeapon.wepId, profileName: profile.profileName, ATK: profile.ATK, HIT: profile.HIT, DMG: profile.DMG, WR: profile.WR })
+          })
+          if (!profileRes.ok) await parseError(profileRes, `Failed to import profile "${profile.profileName}"`)
+          nextProfiles.push(await profileRes.json())
+        }
+
+        if (nextProfiles.length) newWeapon = { ...newWeapon, profiles: nextProfiles }
+        importedWeapons.push(newWeapon)
+      }
+
+      const importedAbilities: AbilityPlain[] = []
+      for (const ability of source.abilities ?? []) {
+        const payload: any = { opTypeId: created.opTypeId, abilityName: ability.abilityName, description: ability.description ?? '' }
+        if (ability.AP !== undefined && ability.AP !== null) payload.AP = ability.AP
+        const abilityRes = await fetch('/api/abilities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        if (!abilityRes.ok) await parseError(abilityRes, `Failed to import ability "${ability.abilityName}"`)
+        importedAbilities.push(await abilityRes.json())
+      }
+
+      const importedOptions: OptionPlain[] = []
+      for (const option of source.options ?? []) {
+        const optionRes = await fetch('/api/options', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ opTypeId: created.opTypeId, optionName: option.optionName, description: option.description ?? '', effects: option.effects ?? '' })
+        })
+        if (!optionRes.ok) await parseError(optionRes, `Failed to import option "${option.optionName}"`)
+        importedOptions.push(await optionRes.json())
+      }
+
+      const importedOpType: OpTypePlain = { ...created, weapons: importedWeapons, abilities: importedAbilities, options: importedOptions }
+      setTeam(prev => ({ ...prev, opTypes: [...prev.opTypes, importedOpType] }))
+      setSelectedOpTypeId(importedOpType.opTypeId)
+      setShowImportModal(false)
+      toast.success('Operative type imported')
+    } catch (err: any) {
+      toast.error(err?.message || 'Import failed')
+    } finally {
+      setImportingOpType(false)
     }
   }, [team.killteamId])
 
@@ -1433,17 +1586,27 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
           <div className="w-72 shrink-0">
             <div className="flex items-center justify-between mb-2">
               <h5>Operative Types</h5>
-              <button
-                className="text-main disabled:text-muted p-1 border border-main rounded hover:bg-muted/20"
-                onClick={async () => {
-                  const created = await addOpType()
-                  if (created) setSelectedOpTypeId(created.opTypeId)
-                }}
-                disabled={(team.opTypes?.length ?? 0) >= MAXOPTYPES}
-                title={(team.opTypes?.length ?? 0) >= MAXOPTYPES ? `Maximum of ${MAXOPTYPES} operative types reached` : ''}
-              >
-                <FiPlus aria-label="Add Operative Type" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  className="text-main disabled:text-muted p-1 border border-main rounded hover:bg-muted/20"
+                  onClick={openImportModal}
+                  disabled={(team.opTypes?.length ?? 0) >= MAXOPTYPES}
+                  title={(team.opTypes?.length ?? 0) >= MAXOPTYPES ? `Maximum of ${MAXOPTYPES} operative types reached` : 'Import from standard killteam'}
+                >
+                  <FiDownload aria-label="Import Operative Type" />
+                </button>
+                <button
+                  className="text-main disabled:text-muted p-1 border border-main rounded hover:bg-muted/20"
+                  onClick={async () => {
+                    const created = await addOpType()
+                    if (created) setSelectedOpTypeId(created.opTypeId)
+                  }}
+                  disabled={(team.opTypes?.length ?? 0) >= MAXOPTYPES}
+                  title={(team.opTypes?.length ?? 0) >= MAXOPTYPES ? `Maximum of ${MAXOPTYPES} operative types reached` : 'Add Operative Type'}
+                >
+                  <FiPlus aria-label="Add Operative Type" />
+                </button>
+              </div>
             </div>
             <div className="space-y-1">
               {team.opTypes.map((o) => {
@@ -2599,6 +2762,95 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
               <div className="text-red-500 text-sm">{deleteError}</div>
             )}
           </div>
+        </Modal>
+      )}
+
+      {/* Import OpType Modal */}
+      {showImportModal && (
+        <Modal
+          title="Import Operative Type"
+          onClose={() => { if (!importingOpType) setShowImportModal(false) }}
+          footer={
+            <div className="flex justify-between gap-2">
+              <div>
+                {importStep === 2 && (
+                  <Button variant="ghost" onClick={() => { setImportStep(1); setImportSourceKillteam(null); setImportSourceOpTypeId('') }} disabled={importingOpType}>
+                    <h6>Back</h6>
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => setShowImportModal(false)} disabled={importingOpType}>
+                  <h6>Cancel</h6>
+                </Button>
+                {importStep === 2 && (
+                  <Button
+                    onClick={() => {
+                      const source = importSourceKillteam?.opTypes?.find(o => o.opTypeId === importSourceOpTypeId)
+                      if (source) importOpType(source)
+                    }}
+                    disabled={!importSourceOpTypeId || importingOpType}
+                  >
+                    <h6>{importingOpType ? 'Importing…' : 'Import'}</h6>
+                  </Button>
+                )}
+              </div>
+            </div>
+          }
+        >
+          {importStep === 1 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Select a standard killteam to import an operative type from.</p>
+              <Input
+                placeholder="Search killteams…"
+                value={importKillteamFilter}
+                onChange={(e) => setImportKillteamFilter(e.target.value)}
+              />
+              {loadingImportKillteams ? (
+                <div className="text-sm text-muted-foreground">Loading killteams…</div>
+              ) : (
+                <div className="max-h-72 overflow-y-auto space-y-1">
+                  {importKillteams
+                    .filter(kt => kt.killteamId.toLowerCase().includes(importKillteamFilter.toLowerCase()) || kt.killteamName.toLowerCase().includes(importKillteamFilter.toLowerCase()))
+                    .map(kt => (
+                      <button
+                        key={kt.killteamId}
+                        className="w-full text-left px-2 py-2 border border-border rounded hover:border-main hover:bg-muted/20"
+                        onClick={() => selectImportKillteam(kt.killteamId)}
+                      >
+                        {kt.killteamName}
+                      </button>
+                    ))
+                  }
+                </div>
+              )}
+            </div>
+          )}
+          {importStep === 2 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Select an operative type from <strong>{importSourceKillteam?.killteamName ?? importSourceKillteamId}</strong>.
+              </p>
+              {loadingImportSource ? (
+                <div className="text-sm text-muted-foreground">Loading operative types…</div>
+              ) : (
+                <div className="max-h-72 overflow-y-auto space-y-1">
+                  {(importSourceKillteam?.opTypes ?? []).map(op => (
+                    <button
+                      key={op.opTypeId}
+                      className={`w-full text-left px-2 py-2 border rounded hover:border-main hover:bg-muted/20 ${importSourceOpTypeId === op.opTypeId ? 'border-main bg-muted/20' : 'border-border'}`}
+                      onClick={() => setImportSourceOpTypeId(op.opTypeId)}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span>{op.opTypeName}</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">M:{op.MOVE} APL:{op.APL} SV:{op.SAVE} W:{op.WOUNDS}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </Modal>
       )}
 
