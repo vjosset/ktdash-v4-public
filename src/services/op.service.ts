@@ -79,6 +79,10 @@ export class OpService {
       // Worsen this operative's weapons' HIT by 1
       op.weapons?.map((wep) => {
         wep.profiles?.map((pro) => {
+          //Special case for Deathwatch Blademaster where its Xenophase Blade does not get modified by being injured
+          if (op.opTypeId === 'IMP-DW-BLM' && wep.wepName === 'Xenophase Blade') {
+            return
+          }
           pro.HIT = (Number(pro.HIT.replace('+', '')) + 1) + '+'
         })
       })
@@ -186,24 +190,24 @@ export class OpService {
           affectedWeapons.forEach((weapon) => {
             weapon.profiles.forEach((profile) => {
               switch (affectedField) {
-                case 'WR':
-                case 'SR':
-                  profile.WR = profile.WR + (profile.WR ? ', ' : '') + fieldMod
-                  break
-                case 'D':
-                case 'DMG':
-                  // DMG has two numbers! [Normal]/[Critical]
-                  const origNDMG = profile.DMG.split('/')[0]
-                  const origCDMG = profile.DMG.split('/')[1]
-                  const modNDMG = fieldMod.split('/')[0]
-                  const modCDMG = fieldMod.split('/')[1]
+              case 'WR':
+              case 'SR':
+                profile.WR = profile.WR + (profile.WR ? ', ' : '') + fieldMod
+                break
+              case 'D':
+              case 'DMG':
+                // DMG has two numbers! [Normal]/[Critical]
+                const origNDMG = profile.DMG.split('/')[0]
+                const origCDMG = profile.DMG.split('/')[1]
+                const modNDMG = fieldMod.split('/')[0]
+                const modCDMG = fieldMod.split('/')[1]
 
-                  profile.DMG = `${(Number(origNDMG) || 0) + Number(modNDMG)}/${(Number(origCDMG) || 0) + Number(modCDMG)}`
-                  break
-                case 'A':
-                case 'ATK':
-                  profile.ATK = (Number(profile.ATK) || 0) + Number(fieldMod)
-                  break
+                profile.DMG = `${(Number(origNDMG) || 0) + Number(modNDMG)}/${(Number(origCDMG) || 0) + Number(modCDMG)}`
+                break
+              case 'A':
+              case 'ATK':
+                profile.ATK = (Number(profile.ATK) || 0) + Number(fieldMod)
+                break
               }
             })
           })
@@ -214,16 +218,16 @@ export class OpService {
           if (value === undefined) return
 
           switch (field) {
-            case 'M':
-              // Move is in inches, so we need to remove the " and convert to number
-              op.MOVE = (Number(op.MOVE.replace('"', '') || 0) + Number(value)) + '"'
-              break
-            case 'SV':
-              op.SAVE = (Number(op.SAVE.replace('+', '') || 0) + Number(value)) + '+'
-              break
-            case 'W':
-              op.WOUNDS = Number(op.WOUNDS || 0) + Number(value)
-              break
+          case 'M':
+            // Move is in inches, so we need to remove the " and convert to number
+            op.MOVE = (Number(op.MOVE.replace('"', '') || 0) + Number(value)) + '"'
+            break
+          case 'SV':
+            op.SAVE = (Number(op.SAVE.replace('+', '') || 0) + Number(value)) + '+'
+            break
+          case 'W':
+            op.WOUNDS = Number(op.WOUNDS || 0) + Number(value)
+            break
           }
         }
       })
