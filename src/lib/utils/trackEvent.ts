@@ -15,6 +15,9 @@ export async function trackEvent(
   v3: string = '',
   r?: string
 ) {
+  const isPWA =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    ('standalone' in navigator && (navigator as any).standalone === true)
   try {
     const body = {
       t,
@@ -24,7 +27,7 @@ export async function trackEvent(
       v2,
       v3,
       u: window.location.href,
-      s: sessionStorage.getItem('sessiontype') ?? '',
+      s: isPWA ? 'pwa' : 'web',
       r: r ?? document.referrer,
     }
 
