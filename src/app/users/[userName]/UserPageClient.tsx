@@ -7,7 +7,7 @@ import RosterCard from '@/src/components/roster/RosterCard'
 import { UserPlain } from '@/types'
 import clsx from 'clsx'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 interface UserPageClientProps {
@@ -20,12 +20,18 @@ export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
   const [rosters, setRosters] = useState(user.rosters)
   const router = useRouter()
 
+  // On mount (including back-navigation from router cache), fetch fresh server data
+  useEffect(() => { router.refresh() }, [router])
+
+  // Sync local state when server data updates after refresh
+  useEffect(() => { setRosters(user.rosters) }, [user.rosters])
+
   const handleDelete = (rosterId: string) => {
     setRosters((currentRosters) => currentRosters?.filter((roster) => roster.rosterId !== rosterId))
   }
 
-  const validTabs = ['rosters', 'killteams'] as const
-  type Tab = (typeof validTabs)[number]
+  const _validTabs = ['rosters', 'killteams'] as const
+  type Tab = (typeof _validTabs)[number]
 
   const [tab, setTab] = useState<Tab>('rosters')
 
