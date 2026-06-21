@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false })
 
 const MAXOPTYPES = 30
-const MAXWEAPONS = 50
+const MAXWEAPONS = 65
 const MAXWEAPONPROFILES = 8
 const MAX_PORTRAIT_BYTES = 10 * 1024 * 1024 // 10MB
 

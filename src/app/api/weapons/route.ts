@@ -40,11 +40,13 @@ export async function POST(req: Request) {
   if (!team) return new NextResponse('Killteam not found', { status: 404 })
   if (team.userId !== session.user.userId && session.user.userId !== 'vince') return new NextResponse('Forbidden', { status: 403 })
   if (team.factionId !== 'HBR') return new NextResponse('Forbidden', { status: 403 })
+    
+  const MAXWEAPONS = 65
 
   // Cap weapons per opType at 50
   const currentWepCount = await WeaponService.countForOpType(opType.opTypeId)
-  if (currentWepCount >= 50) {
-    return NextResponse.json({ error: 'This operative already has the maximum of 50 weapons.' }, { status: 400 })
+  if (currentWepCount >= MAXWEAPONS) {
+    return NextResponse.json({ error: `This operative already has the maximum of ${MAXWEAPONS} weapons.` }, { status: 400 })
   }
 
   // Create weapon + default profile
