@@ -38,7 +38,7 @@ export function useLocalSettings() {
 
   useEffect(() => {
     if (typeof document === 'undefined') return
-    document.documentElement.setAttribute('data-font', settings.fontFamily)
+    document.body.setAttribute('data-font', settings.fontFamily)
   }, [settings.fontFamily])
 
   const updateSettings = (update: SettingsUpdater) => {
