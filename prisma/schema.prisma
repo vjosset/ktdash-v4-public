@@ -35,11 +35,13 @@ model WebEvent {
   userIp      String   @db.VarChar(250)
   userAgent   String   @db.VarChar(500)
   referrer    String?  @db.VarChar(500)
+  visitId     String?  @db.VarChar(36)
 
   @@index([userId, eventType, action, label], name: "IX_TAL")
   @@index([var1, eventType, action, label], name: "IX_VAR1")
   @@index([userId], name: "IX_USER")
   @@index([datestamp], name: "IX_datestamp")
+  @@index([visitId], name: "IX_visitId")
 }
 
 model Faction {
