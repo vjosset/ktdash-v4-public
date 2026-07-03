@@ -11,15 +11,9 @@ export function Tracker() {
   useEffect(() => {
     if (!pathname) return
 
-    const url = pathname + searchParams.toString()
-
-    window.gtag?.('config', 'G-Q584HL6VDV', {
-      page_path: url,
-    })
-
     trackEvent('page', 'view')
 
-  }, [pathname])
+  }, [pathname, searchParams])
 
   return null
 }

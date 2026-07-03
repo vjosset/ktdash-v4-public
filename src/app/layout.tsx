@@ -31,12 +31,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-Q584HL6VDV', {
-              page_path: window.location.pathname,
-            });
+            gtag('config', 'G-Q584HL6VDV');
           `}
         </Script>
-        <Script id="font-init" strategy="beforeInteractive">
+        <Script id="font-init" strategy="afterInteractive">
           {`
             try {
               var raw = window.localStorage.getItem('settings');
