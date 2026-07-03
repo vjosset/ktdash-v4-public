@@ -5,6 +5,7 @@ import ServiceWorkerRegister from '@/components/tools/ServiceWorkerRegister'
 import { ClientProviders } from '@/components/ui/ClientProviders'
 import { authOptions } from '@/lib/auth'
 import '@/src/styles/globals.css'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import { getServerSession } from 'next-auth'
 import Script from 'next/script'
 
@@ -21,19 +22,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
 
       <body className="text-foreground font-main" suppressHydrationWarning>
-        {/* Google Tag Manager (GA4) */}
-        <Script
-          src={'https://www.googletagmanager.com/gtag/js?id=G-Q584HL6VDV'}
-          strategy="afterInteractive"
-        />
-        <Script id="ga4-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-Q584HL6VDV');
-          `}
-        </Script>
         <Script id="font-init" strategy="afterInteractive">
           {`
             try {
@@ -56,6 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <NavBarBottom />
         </ClientProviders>
         <ServiceWorkerRegister />
+        <GoogleAnalytics gaId="G-Q584HL6VDV" />
       </body>
     </html>
   )
