@@ -414,6 +414,9 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
     if (killteamName.includes('WIP')) {
       issues.push('Killteam cannot be a Work in Progress.')
     }
+    if (killteamName.length && !/^[a-zA-Z]/.test(killteamName)) {
+      issues.push('Killteam name must start with a letter.')
+    }
     if (!hasPortrait) {
       issues.push('Add a portrait for this killteam.')
     }
@@ -1367,13 +1370,13 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
                 onChange={(e) => {
                   const checked = (e.target as HTMLInputElement).checked
                   if (checked) {
-                  //const issues = validateReadyToPublish({ ...team, isPublished: true })
-                  //if (issues.length) {
-                  //  setPublishErrors(issues)
-                  //  toast.error(['Cannot publish yet:', ...issues.map(issue => `• ${issue}`)].join('\n'))
-                  //  return
-                  //}
-                  //setPublishErrors([])
+                    const issues = validateReadyToPublish({ ...team, isPublished: true })
+                    if (issues.length) {
+                      setPublishErrors(issues)
+                      toast.error(['Cannot publish yet:', ...issues.map(issue => `• ${issue}`)].join('\n'))
+                      return
+                    }
+                    setPublishErrors([])
                   } else {
                     setPublishErrors([])
                   }
