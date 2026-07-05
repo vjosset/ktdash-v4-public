@@ -35,7 +35,7 @@ export default function Modal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-2 border-b border-border sticky top-0 bg-background z-10">
+        <div className="flex items-center justify-between p-2 border-b border-border sticky top-0 z-10">
           <h5 className="text-main font-bold font-heading">{title}</h5>
           <button
             className="text-muted hover:text-main w-4 h-4 flex items-center justify-center"
@@ -53,7 +53,7 @@ export default function Modal({
 
         {/* Optional Footer (e.g. Save button) */}
         {footer &&
-          <div className="p-2 border-t border-border sticky bottom-0 bg-background z-10">
+          <div className="p-2 border-t border-border sticky bottom-0 z-10">
             {footer}
           </div>
         }
