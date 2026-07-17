@@ -215,8 +215,8 @@ export default function OpCard({
                   )}
                 </h5>
               </div>
-              {/* Menu */}
 
+              {/* Menu */}
               {isOwner && (
                 <Menu as="div" className="relative flex-shrink-0 noprint">
                   <MenuButton as="button" className="p-1">
@@ -402,10 +402,21 @@ export default function OpCard({
 
         {/* Footer */}
         {!isCollapsed && (
-          <div className="border-t border-border mt-auto text-muted text-xs flex flex-col gap-1 uppercase">
+          <div className="border-t border-border mt-auto text-muted text-xs flex items-center justify-between gap-1 uppercase">
             <em>
               {op.isOpType ? op.keywords : op.opType?.keywords}
             </em>
+            {(() => {
+              const basesize = op.isOpType ? (op as OpTypePlain).basesize : op.opType?.basesize
+              return basesize ? (
+                <span
+                  className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-muted normal-case"
+                  title={`Base size: ${basesize}mm`}
+                >
+                  {basesize}
+                </span>
+              ) : null
+            })()}
           </div>
         )}
       </div>
