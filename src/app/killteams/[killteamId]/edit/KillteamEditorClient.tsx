@@ -1732,14 +1732,24 @@ export default function KillteamEditorClient({killteam}: { killteam: KillteamPla
                     </div>
                   </div>
 
-                  {/* Meta: Keywords + NameType */}
+                  {/* Meta: Keywords + BaseSize + NameType */}
                   <div className="grid grid-cols-12 gap-2 mt-2">
-                    <div className="col-span-12 md:col-span-8">
+                    <div className="col-span-12 md:col-span-6">
                       <Label>Keywords</Label>
                       <Input
                         value={op.keywords}
                         maxLength={250}
                         onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, keywords: e.target.value } : o) })}
+                        onBlur={() => saveOpType(op)}
+                      />
+                    </div>
+                    <div className="col-span-6 md:col-span-2">
+                      <Label>Base</Label>
+                      <Input
+                        type="number"
+                        className="no-spinner"
+                        value={op.basesize}
+                        onChange={(e) => setTeam({ ...team, opTypes: team.opTypes.map(o => o.opTypeId === op.opTypeId ? { ...o, basesize: parseInt(e.target.value || '0', 10) } : o) })}
                         onBlur={() => saveOpType(op)}
                       />
                     </div>
