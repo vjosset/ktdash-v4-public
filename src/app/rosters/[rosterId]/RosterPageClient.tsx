@@ -349,7 +349,7 @@ export default function RosterPageClient({
   if (roster.hasCustomPortrait) {
     carouselItems.push({title: roster.rosterName, imageUrl: `${getRosterPortraitUrl(roster.rosterId)}?v=${toEpochMs(roster.portraitUpdatedAt)}` })
   }
-  roster.ops?.filter(op => op.hasCustomPortrait).map(op => op.hasCustomPortrait && carouselItems.push({title: op.opName, imageUrl: `${getOpPortraitUrl(op.opId)}?v=${toEpochMs(op.portraitUpdatedAt)}`}))
+  roster.ops?.filter(op => op.hasCustomPortrait).map(op => op.hasCustomPortrait && carouselItems.push({title: op.opName || op.opTypeName || '', imageUrl: `${getOpPortraitUrl(op.opId)}?v=${toEpochMs(op.portraitUpdatedAt)}`}))
 
   const handlePortraitClick = (clickedUrl: string) => {
     const index = carouselItems.findIndex(item => item.imageUrl === clickedUrl)
