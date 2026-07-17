@@ -1,13 +1,13 @@
 'use client'
 
 import PortraitCropper, { getCroppedBlob } from '@/components/shared/PortraitCropper'
-import { showInfoModal } from '@/lib/utils/showInfoModal'
 import { getOpPortraitUrl, toEpochMs } from '@/lib/utils/imageUrls'
+import { showInfoModal } from '@/lib/utils/showInfoModal'
 import { WeaponRule } from '@/lib/utils/weaponRules'
 import { OpPlain, OpTypePlain } from '@/types'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react'
-import { Area } from 'react-easy-crop'
 import { useEffect, useState } from 'react'
+import { Area } from 'react-easy-crop'
 import { FiChevronDown } from 'react-icons/fi'
 import { GiRollingDices } from 'react-icons/gi'
 import Markdown from 'react-markdown'
@@ -203,11 +203,24 @@ export default function OpEditorModal({
         title={`${isEditMode ? op.opName : 'Add Operative'}`}
         onClose={onClose}
         footer={
-          <div className="flex justify-between items-start text-muted">
-            <div className="whitespace-nowrap">
-              {isEditMode && selectedOpType?.opTypeName}
+          <div className="flex items-center justify-between gap-2 text-muted">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {selectedOpType?.basesize && (
+                <span
+                  className="text-xs flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full border border-muted normal-case"
+                  title={`Base size: ${selectedOpType.basesize}mm`}
+                >
+                  {selectedOpType.basesize}
+                </span>
+              )}
+              {isEditMode && selectedOpType?.opTypeName && (
+                <span className="truncate">{selectedOpType.opTypeName}</span>
+              )}
+              {!isEditMode && selectedOpType?.keywords && (
+                <em className="uppercase text-xs">{selectedOpType.keywords}</em>
+              )}
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex-shrink-0 flex justify-end gap-2">
               <Button onClick={onClose} variant="ghost">
                 <h6>Cancel</h6>
               </Button>

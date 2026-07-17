@@ -403,9 +403,6 @@ export default function OpCard({
         {/* Footer */}
         {!isCollapsed && (
           <div className="border-t border-border mt-auto text-muted text-xs flex items-center justify-between gap-1 uppercase">
-            <em>
-              {op.isOpType ? op.keywords : op.opType?.keywords}
-            </em>
             {(() => {
               const basesize = op.isOpType ? (op as OpTypePlain).basesize : op.opType?.basesize
               return basesize ? (
@@ -417,6 +414,9 @@ export default function OpCard({
                 </span>
               ) : null
             })()}
+            <em>
+              {op.isOpType ? op.keywords : op.opType?.keywords}
+            </em>
           </div>
         )}
       </div>
