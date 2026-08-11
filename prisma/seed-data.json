@@ -23101,6 +23101,110 @@
       "eqName": "Chaos Talismans",
       "description": "**STRATEGIC GAMBIT**\nSelect one Marks of Chaos keyword.\nOnce during each of their activations, when a friendly LEGIONARY operative that has that keyword is shooting, fighting or retaliating, if you roll two or more fails,\nyou can inflict D3 damage on that friendly operative to discard one of them and retain the other as a normal success instead.\nNote that if it is the Shoot action and that damage incapacitates that friendly operative, the action does not end (continue the sequence with your successful attack dice).",
       "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-AC",
+      "killteamId": null,
+      "seq": 1,
+      "eqName": "Ammo Cache (x1)",
+      "description": "Before the battle, you can set up one of your Ammo Cache markers wholly within your territory. Friendly operatives can perform the following mission action during the battle: AMMO RESUPPLY (0 AP): One of your Ammo Cache markers the active operative controls is used during this turning point.\n\nUntil the start of the next turning point, whenever this operative is shooting with a weapon from its datacard, you can re-roll one of your attack dice.\n\nAn operative cannot perform this action while within control range of an enemy operative, if that marker is not yours, or if that marker has been used this turning point.",
+      "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-RW",
+      "killteamId": null,
+      "seq": 2,
+      "eqName": "Razor Wire (x1)",
+      "description": "Razor wire is Exposed and Obstructing terrain. Before the battle, you can set it up wholly within your territory, on the killzone floor and more than 2\" from other equipment terrain features, access points, and Accessible terrain.\n\nObstructing: Whenever an operative would cross over this terrain feature within 1\" of it, treat the distance as an additional 1\".",
+      "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-CD",
+      "killteamId": null,
+      "seq": 3,
+      "eqName": "Comms Device (x1)",
+      "description": "Before the battle, you can set up one of your Comms Device markers wholly within your territory. While a friendly operative controls this marker, add 3\" to the distance requirements of its SUPPORT rules that refer to friendly operatives (e.g. ‘select one friendly operative within 6\"’ would be 9\" instead). Note that you cannot benefit from your opponent's Comms Device markers.",
+      "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-MIN",
+      "killteamId": null,
+      "seq": 4,
+      "eqName": "Mines (x1)",
+      "description": "Before the battle, you can set up one of your Mines markers wholly within your territory and more than 2\" from other markers, access points, and Accessible terrain. The first time that marker is within an operative's control range, remove that marker and inflict D3+3 damage on that operative.",
+      "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-LB",
+      "killteamId": null,
+      "seq": 5,
+      "eqName": "Light Barricades (x2)",
+      "description": "Light barricades are Light terrain, except the feet, which are Insignificant and Exposed. Before the battle, you can set up any of them wholly within your territory, on the killzone floor and more than 2\" from other equipment terrain features, access points, and Accessible terrain.",
+      "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-HB",
+      "killteamId": null,
+      "seq": 6,
+      "eqName": "Heavy Barricade (x1)",
+      "description": "A heavy barricade is Heavy terrain. Before the battle, you can set it up wholly within 4\" of your drop zone, on the killzone floor and more than 2\" from other equipment terrain features, access points, and Accessible terrain.",
+      "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-LAD",
+      "killteamId": null,
+      "seq": 7,
+      "eqName": "Ladders (x2)",
+      "description": "Ladders are Insignificant and Exposed terrain. Before the battle, you can set up any of them as follows:\n\n- Wholly within your territory.\n- Upright against terrain that’s at least 2\" tall.\n- More than 2\" from other equipment terrain features.\n- More than 1\" from doors and access points.\n\nOnce per action, whenever an operative is climbing the terrain feature a ladder is placed against, treat the vertical distance as 1\" if the ladder is within that operative’s control range during that entire climb.",
+      "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-PB",
+      "killteamId": null,
+      "seq": 8,
+      "eqName": "Portable Barricade (x1)",
+      "description": "A portable barricade is Light, Protective and Portable terrain, except the feet which are Insignificant and Exposed. Before the battle, you can set it up wholly within your territory, on the killzone floor and more than 2\" from other equipment terrain features, access points, and Accessible terrain.\n\nProtective: While an operative is in cover from this terrain feature, improve its Save stat by 1 (to a maximum of 2+).\n\nPortable: This terrain feature only provides cover while an operative is connected to it and if the shield is intervening (ignore its feet). Operatives connected to the inside of it can perform the following unique action during the battle:\n\nMove With Barricade (1 AP): The same as the Reposition action, except the active operative can move no more than its Move stat minus 2\" and cannot climb, drop, jump, or use any killteam's rules that remove it and set it back up again (e.g. HEARTHKYN SALVAGER Fly, MANDRAKE Shadow Passage).\n\nBefore this operative moves, remove the portable barricade it is connected to. After it moves, set up the portable barricade so it is connected again, but the portable barricade cannot be set up within 2\" of other equipment terrain features, access points or Accessible terrain. If this is not possible, the portable barricade is not set up again.\n\nThis action is treated as a Reposition action. An operative cannot perform this action while within control range of an enemy operative, or in the same activation in which it performed the Fall Back or Charge action.",
+      "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-UG-SMOKE",
+      "killteamId": null,
+      "seq": 9,
+      "eqName": "Utility Grenade - Smoke (x1/2)",
+      "description": "When you select this equipment, select two utility grenades (2 smoke, 2 stun, or 1 smoke and 1 stun). Each selection is a unique action your operatives can perform, but your kill team can only perform that action a total number of times during the battle equal to your selection.\n\nSMOKE GRENADE (1 AP):\n\nPlace one of your Smoke Grenade markers within 6\" of this operative. It must be visible to this operative, or on Vantage terrain of a terrain feature that is visible to this operative. The marker creates an area of smoke 1\" horizontally and unlimited height vertically from (but not below) it.\nWhile an operative is wholly within an area of smoke, it is obscured to operatives more than 2\" from it, and vice versa. In addition, whenever an operative is shooting an enemy operative wholly within an area of smoke, weapons with the Piercing 2 or Piercing Crits 2 weapon rule have the Piercing 1 or Piercing Crits 1 weapon rule (respectively) instead, unless they’re within 2\" of each other.\nIn the Ready step of the next Strategy phase, roll one D3. Remove that Smoke Grenade marker after a number of activations equal to that D3 have been completed or at the end of the turning point (whichever comes first).\nAn operative cannot perform this action while within control range of an enemy operative, or if you have reached the total number of times your kill team can perform it.",
+      "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-UG-STUN",
+      "killteamId": null,
+      "seq": 10,
+      "eqName": "Utility Grenade - Stun (x1/2)",
+      "description": "When you select this equipment, select two utility grenades (2 smoke, 2 stun, or 1 smoke and 1 stun). Each selection is a unique action your operatives can perform, but your kill team can only perform that action a total number of times during the battle equal to your selection.\n\nSTUN GRENADE (1 AP):\n\nSelect one enemy operative visible to and within 6\" of this operative. That operative and each other operative within 1\" of it takes a stun test. For an operative to take a stun test, roll one D6: on a 3+, subtract 1 from its APL stat until the end of its next activation.\nAn operative cannot perform this action while within control range of an enemy operative, or if you have reached the total number of times your kill team can perform it.",
+      "effects": ""
+    },
+    {
+      "eqId": "UNIVERSAL-UE-XG-FRAG",
+      "killteamId": null,
+      "seq": 11,
+      "eqName": "Explosive Grenade - Frag (x1/2)",
+      "description": "When you select this equipment, select two explosive grenades (2 frag, 2 krak, or 1 frag and 1 krak).\n\n|**Name**|**ATK**|**HIT**|**DMG**|\n|-----|:-----:|:-----:|:-----:|\n|Frag Grenade|4|4+|2/4|\n|**Weapon Rules**|\n|Rng 6\", Blast 2\", Saturate|\n",
+      "effects": "ADDWEP:Frag Grenade|R|4|4+|2/4|Rng 6\", Blast 2\", Sat"
+    },
+    {
+      "eqId": "UNIVERSAL-UE-XG-KRAK",
+      "killteamId": null,
+      "seq": 12,
+      "eqName": "Explosive Grenade - Krak (x1/2)",
+      "description": "When you select this equipment, select two explosive grenades (2 frag, 2 krak, or 1 frag and 1 krak).\n\n|**Name**|**ATK**|**HIT**|**DMG**|\n|-----|:-----:|:-----:|:-----:|\n|Krak Grenade|4|4+|4/5|\n|**Weapon Rules**|\n|Rng 6\", Piercing 1, Saturate|\n",
+      "effects": "ADDWEP:Krak Grenade|R|4|4+|4/5|Rng 6\", Prc1, Sat"
+    },
+    {
+      "eqId": "UNIVERSAL-UE-BC",
+      "killteamId": null,
+      "seq": 13,
+      "eqName": "Breaching Charge",
+      "description": "Once per battle, when a friendly operative performs the Breach action, you can use this rule. If you do, that operative can perform that action for 1 less AP (to a minimum of 1AP) as though it had the word \"breach marker\" on its datacard.",
+      "effects": ""
     }
   ],
   "options": [
