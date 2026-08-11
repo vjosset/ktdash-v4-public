@@ -58,9 +58,10 @@ export class RosterService {
         const weaponEffects = filteredEffectTokens.filter((token) => token.startsWith('ADDWEP'))
         const nonWeaponEffects = filteredEffectTokens.filter((token) => !token.startsWith('ADDWEP'))
 
-        // If this equipment has a non-weapon effect, add it to the operative's options
-        // UNLESS it's a "No equipment" operative type
-        if (nonWeaponEffects.length > 0) {
+        // Always surface selected equipment as an Option for reference, unless it purely grants a weapon
+        // (already visible in the Weapons table) with no other rules text to show
+        const isWeaponOnly = weaponEffects.length > 0 && nonWeaponEffects.length === 0 && filteredEffectTokens.length > 0
+        if (!isWeaponOnly) {
           const option = new Option ({
             optionId: eq.eqId,
             optionName: 'Eq: ' + eq.eqName,

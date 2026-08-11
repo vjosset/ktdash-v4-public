@@ -83,6 +83,12 @@ export function sanitizeFileName(fileName: string): string {
     .toLowerCase(); // Optionally make it lowercase for consistency
 }
 
+// Ploys have no structured CP-cost field; best-effort extract it from the free-text description
+export function parsePloyCPCost(description: string): number | null {
+  const match = description.match(/(\d+)\s*CP/i)
+  return match ? parseInt(match[1], 10) : null
+}
+
 export function getOpUniqueAbilitiesAndOptions(roster?: RosterPlain, op?: OpPlain) {
   if (!op || !roster) {
     return { abilities: [], options: [] }
