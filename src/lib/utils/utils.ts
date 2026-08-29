@@ -212,3 +212,18 @@ export function getKillteamRepeatedAbilitiesAndOptions(killteam: KillteamPlain |
 
   return getRepeatedAbilitiesAndOptionsFromCarriers(killteam.opTypes ?? [])
 }
+
+/*
+  Accepts either a bare roster ID or a roster URL pasted from the address bar,
+  in any casing. Returns null for empty input.
+*/
+export function parseRosterId(input: string): string | null {
+  const trimmed = input.trim()
+  if (!trimmed) return null
+
+  const parts = trimmed.split('/').filter(Boolean)
+  const idx = parts.findIndex((part) => part.toUpperCase() === 'ROSTERS')
+  if (idx >= 0 && parts[idx + 1]) return parts[idx + 1]
+
+  return trimmed
+}

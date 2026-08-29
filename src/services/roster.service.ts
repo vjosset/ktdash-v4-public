@@ -1,7 +1,7 @@
 //@ts-nocheck
 import { genId } from '@/lib/utils/utils'
 import { RosterRepository } from '@/src/repositories/roster.repository'
-import { Equipment, Option, Roster, Weapon } from '@/types'
+import { Equipment, Option, Roster, RosterIdentity, Weapon } from '@/types'
 import fs from 'fs/promises'
 import path from 'path'
 import { OpService } from './op.service'
@@ -13,6 +13,10 @@ export class RosterService {
   static async getRosterRow(rosterId: string): Promise<Roster | null> {
     const row = await this.repository.getRosterRow(rosterId)
     return row ? new Roster(row) : null
+  }
+
+  static async getRosterIdentityRow(rosterId: string): Promise<RosterIdentity | null> {
+    return await this.repository.getRosterIdentityRow(rosterId)
   }
 
   static async getRoster(rosterId: string): Promise<Roster | null> {

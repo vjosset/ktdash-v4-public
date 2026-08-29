@@ -4,6 +4,7 @@ import OpCard from '@/components/op/OpCard'
 import AddRosterForm from '@/components/roster/AddRosterForm'
 import RosterEquipment from '@/components/roster/RosterEquipment'
 import RosterPloys from '@/components/roster/RosterPloys'
+import KillteamMatchStats from '@/components/killteam/KillteamMatchStats'
 import RosterSpotlightCard from '@/components/roster/RosterSpotlightCard'
 import { badgeClass } from '@/components/shared/Links'
 import Button from '@/components/ui/Button'
@@ -25,8 +26,11 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const validTabs = ['operatives', 'composition', 'equipment', 'ploys', 'tacops', 'rosters'] as const
+  const validTabs = ['operatives', 'composition', 'equipment', 'ploys', 'tacops', 'rosters', 'stats'] as const
   type Tab = typeof validTabs[number]
+
+  // Homebrew teams have too few and too fluid a roster pool for the numbers to mean anything
+  const statsEnabled = process.env.NEXT_PUBLIC_ENABLE_MATCHRESULTS === 'true' && !killteam.isHomebrew
   
   const tabParam = searchParams.get('tab')
   const initialTab = validTabs.includes(tabParam as Tab) ? (tabParam as Tab) : 'operatives'
@@ -269,6 +273,11 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
               Rosters
             </button>
           }
+          {statsEnabled &&
+            <button className={tabClasses(tab === 'stats')} onClick={() => handleTabChange('stats')}>
+              Stats
+            </button>
+          }
         </div>
       </div>
 
@@ -333,6 +342,13 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
           })}
         </div>
         
+        {/* Recorded battle results */}
+        {statsEnabled && (
+          <div key="statsTab" className={tab === 'stats' ? 'block' : 'hidden'}>
+            <KillteamMatchStats killteamId={killteam.killteamId} />
+          </div>
+        )}
+
         {/* Rosters/Spotlight */}
         <div key="rostersTab" className={tab === 'rosters' ? 'block' : 'hidden'}>
           <div className="gap-1 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

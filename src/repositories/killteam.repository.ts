@@ -87,6 +87,19 @@ export class KillteamRepository extends BaseRepository {
     return mappedKillteam
   }
 
+  /*
+    Names for a set of killteam ids, official teams only. Used to label match-up
+    rows without pulling each killteam's description and composition text.
+  */
+  async getOfficialKillteamNameRows(killteamIds: string[]) {
+    if (!killteamIds.length) return []
+
+    return this.prisma.killteam.findMany({
+      where: { killteamId: { in: killteamIds }, factionId: { not: 'HBR' } },
+      select: { killteamId: true, killteamName: true },
+    })
+  }
+
   async getAllKillteams(scope: KillteamScope = 'all') {
     const where: Record<string, unknown> = { isPublished: true }
 

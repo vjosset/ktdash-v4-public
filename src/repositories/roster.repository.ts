@@ -1,4 +1,5 @@
 // @ts-nocheck
+import type { RosterIdentity } from '@/types';
 import type { Roster } from '@prisma/client';
 import { BaseRepository } from './base.repository';
 
@@ -90,6 +91,35 @@ export class RosterRepository extends BaseRepository {
         equipments
       }
     };
+  }
+
+  /*
+    Flat six-column projection used to snapshot a roster onto a match result.
+    Deliberately avoids getRoster(), which pulls the whole killteam and every op.
+  */
+  async getRosterIdentityRow(rosterId: string): Promise<RosterIdentity | null> {
+    const row = await this.prisma.roster.findUnique({
+      where: { rosterId },
+      select: {
+        rosterId: true,
+        userId: true,
+        rosterName: true,
+        killteamId: true,
+        user: { select: { userName: true } },
+        killteam: { select: { killteamName: true } },
+      },
+    })
+
+    if (!row) return null
+
+    return {
+      rosterId: row.rosterId,
+      userId: row.userId,
+      rosterName: row.rosterName,
+      userName: row.user?.userName ?? '',
+      killteamId: row.killteamId,
+      killteamName: row.killteam?.killteamName ?? '',
+    }
   }
 
   async getRandomSpotlightRosterId(): Promise<string | null> {

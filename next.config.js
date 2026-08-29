@@ -8,13 +8,13 @@ const nextConfig = {
     return [
       // Roster page pretty tab paths → same page with a tab query (your current code already reads it)
       {
-        source: '/rosters/:id/:tab(operatives|equipment|ploys|ops|gallery)',
+        source: '/rosters/:id/:tab(operatives|equipment|ploys|ops|gallery|battles)',
         destination: '/rosters/:id?tab=:tab',
       },
       
       // Killteam page pretty tab paths
       {
-        source: '/killteams/:id/:tab(operatives|composition|equipment|ploys|tacops|rosters)',
+        source: '/killteams/:id/:tab(operatives|composition|equipment|ploys|tacops|rosters|stats)',
         destination: '/killteams/:id?tab=:tab'
       },
     

@@ -35,7 +35,7 @@ model WebEvent {
   userIp      String   @db.VarChar(250)
   userAgent   String   @db.VarChar(500)
   referrer    String?  @db.VarChar(500)
-  visitId     String?  @db.VarChar(36)
+  visitId     String?  @db.VarChar(50)
 
   @@index([userId, eventType, action, label], name: "IX_TAL")
   @@index([var1, eventType, action, label], name: "IX_VAR1")
@@ -158,13 +158,17 @@ model Roster {
   portraitUpdatedAt DateTime @default(now())
   eqIds             String   @default("")
   ployIds           String   @default("")
+  eloRating         Float    @default(1000)
 
   ops                Op[]
-  user               User?     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user               User?         @relation(fields: [userId], references: [userId], onDelete: Cascade)
   // Back-reference for rosters collection on Killteam
-  killteam           Killteam? @relation("RosterBelongsToKillteam", fields: [killteamId], references: [killteamId], onDelete: Cascade)
+  killteam           Killteam?     @relation("RosterBelongsToKillteam", fields: [killteamId], references: [killteamId], onDelete: Cascade)
   // Back-reference for defaultRoster on Killteam
-  defaultForKillteam Killteam? @relation("KillteamDefaultRoster")
+  defaultForKillteam Killteam?     @relation("KillteamDefaultRoster")
+  // Match results this roster took part in, in either slot
+  matchesAsA         MatchResult[] @relation("MatchRosterA")
+  matchesAsB         MatchResult[] @relation("MatchRosterB")
 }
 
 model Op {
@@ -235,4 +239,39 @@ model KillteamVote {
   user     User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([killteamId, userId], map: "IX_KillteamVote_UserPerTeam")
+}
+
+model MatchResult {
+  matchResultId    Int      @id @default(autoincrement())
+  rosterAId        String?  @db.VarChar(20)
+  rosterBId        String?  @db.VarChar(20)
+  result           String   @db.VarChar(1) // "A" = Roster A won, "B" = Roster B won, "D" = Draw
+  rosterBConfirmed Boolean  @default(false)
+  matchDate        DateTime @default(now())
+
+  // Snapshots taken at report time - survive deletion of the roster, user, or killteam
+  rosterANameSnap         String @db.VarChar(250)
+  rosterAUserNameSnap     String @db.VarChar(250)
+  rosterAKillteamIdSnap   String @db.VarChar(20)
+  rosterAKillteamNameSnap String @db.VarChar(250)
+  rosterBNameSnap         String @db.VarChar(250)
+  rosterBUserNameSnap     String @db.VarChar(250)
+  rosterBKillteamIdSnap   String @db.VarChar(20)
+  rosterBKillteamNameSnap String @db.VarChar(250)
+
+  // Per-match rating snapshots - schema only, nothing writes these yet
+  eloBeforeA Float?
+  eloBeforeB Float?
+  eloAfterA  Float?
+  eloAfterB  Float?
+
+  rosterA Roster? @relation("MatchRosterA", fields: [rosterAId], references: [rosterId], onDelete: SetNull)
+  rosterB Roster? @relation("MatchRosterB", fields: [rosterBId], references: [rosterId], onDelete: SetNull)
+
+  @@index([rosterAId], map: "IX_MatchResult_RosterA")
+  @@index([rosterBId], map: "IX_MatchResult_RosterB")
+  @@index([matchDate], map: "IX_MatchResult_MatchDate")
+  // Per-killteam aggregation reads the snapshots, not the live relation
+  @@index([rosterAKillteamIdSnap], map: "IX_MatchResult_KillteamA")
+  @@index([rosterBKillteamIdSnap], map: "IX_MatchResult_KillteamB")
 }

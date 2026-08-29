@@ -3,6 +3,7 @@
 import AddOpForm from '@/components/op/AddOpForm'
 import OpCard from '@/components/op/OpCard'
 import EditRosterForm from '@/components/roster/EditRosterForm'
+import MatchResultsTab from '@/components/roster/MatchResultsTab'
 import RosterCardMenu from '@/components/roster/RosterCardMenu'
 import RosterEquipment from '@/components/roster/RosterEquipment'
 import RosterOps from '@/components/roster/RosterOps'
@@ -43,8 +44,11 @@ export default function RosterPageClient({
   const { data: session, status } = useSession()
 
   // Get ?tab= value from the URL
-  const validTabs = ['operatives', 'equipment', 'ploys', 'ops', 'gallery', 'opponent'] as const
+  const validTabs = ['operatives', 'equipment', 'ploys', 'ops', 'gallery', 'battles', 'opponent'] as const
   type Tab = typeof validTabs[number]
+
+  // Match results are still in progress - see notes/match-result-spec.md
+  const battlesEnabled = process.env.NEXT_PUBLIC_ENABLE_MATCHRESULTS === 'true'
 
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -553,7 +557,7 @@ export default function RosterPageClient({
       )}
       <div className="max-w-7xl mx-auto print:max-w-none">
         {/* Tabs  */}
-        {(isOwner || (carouselItems.length > 0)) && (
+        {(isOwner || carouselItems.length > 0 || battlesEnabled) && (
           <div className="overflow-x-auto px-2 noprint">
             <div className="flex justify-center space-x-2 border-b border-border mb-4">
               <button className={tabClasses(tab === 'operatives')} onClick={() => handleTabChange('operatives')}>
@@ -577,6 +581,11 @@ export default function RosterPageClient({
               {roster && carouselItems.length > 0 &&
                 <button className={tabClasses(tab === 'gallery')} onClick={() => handleTabChange('gallery')}>
                   Gallery
+                </button>
+              }
+              {battlesEnabled &&
+                <button className={tabClasses(tab === 'battles')} onClick={() => handleTabChange('battles')}>
+                  Battles
                 </button>
               }
               {isOwner &&
@@ -696,6 +705,13 @@ export default function RosterPageClient({
           <div className={tab === 'ops' ? 'block' : 'hidden'}>
             <RosterOps roster={roster} onRosterUpdate={(updated) => setRoster(updated)} />
           </div>
+
+          {/* Battles */}
+          {battlesEnabled && (
+            <div className={tab === 'battles' ? 'block' : 'hidden'}>
+              <MatchResultsTab roster={roster} isOwner={isOwner} isActive={tab === 'battles'} />
+            </div>
+          )}
 
           {/* Opponent — always mounted when owner so state survives tab switches */}
           {isOwner && (

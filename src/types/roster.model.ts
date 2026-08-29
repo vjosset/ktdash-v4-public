@@ -1,5 +1,19 @@
 import { Equipment, EquipmentPlain, Killteam, KillteamPlain, Op, OpPlain, User, UserPlain } from '.'
 
+/*
+  Flat projection of everything a match result needs to snapshot about a roster.
+  Loaded by RosterRepository.getRosterIdentityRow() so reporting a match never has
+  to pull a full Roster (with ops) just to write six strings.
+*/
+export type RosterIdentity = {
+  rosterId: string
+  userId: string
+  rosterName: string
+  userName: string
+  killteamId: string
+  killteamName: string
+}
+
 export type RosterPlain = {
   rosterId: string
   userId: string

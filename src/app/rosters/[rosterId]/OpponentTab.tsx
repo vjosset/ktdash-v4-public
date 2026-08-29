@@ -2,6 +2,7 @@
 
 import OpCard from '@/components/op/OpCard'
 import { KillteamLink, UserLink } from '@/components/shared/Links'
+import { parseRosterId } from '@/lib/utils/utils'
 import { WeaponRule } from '@/lib/utils/weaponRules'
 import { RosterPlain } from '@/types'
 import { FormEvent, useEffect, useRef, useState } from 'react'
@@ -11,18 +12,6 @@ const opponentKey = (id: string) => `opponent_${id}`
 const getOpponentRosterId = (id: string) => isBrowser() ? localStorage.getItem(opponentKey(id)) : null
 const setOpponentRosterId = (id: string, opId: string) => isBrowser() && localStorage.setItem(opponentKey(id), opId)
 const clearOpponentRosterId = (id: string) => isBrowser() && localStorage.removeItem(opponentKey(id))
-
-function parseRosterId(input: string): string | null {
-  // Remember the input is submitted in uppercase due to text-transform
-  try {
-    const parts = input.split('/').filter(Boolean)
-    const idx = parts.indexOf('ROSTERS')
-    if (idx >= 0 && parts[idx + 1]) return parts[idx + 1]
-  } catch {
-    // not a URL, fall through
-  }
-  return input.length > 0 ? input : null
-}
 
 interface OpponentTabProps {
   myRosterId: string
