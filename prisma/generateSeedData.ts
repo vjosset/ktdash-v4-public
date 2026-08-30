@@ -39,7 +39,8 @@ async function exportCoreData() {
       ploys,
     ] = await Promise.all([
       prisma.opType.findMany({ where: { killteamId: { in: killteams.map(kt => kt.killteamId) } }, orderBy: { seq: 'asc' } }),
-      prisma.equipment.findMany({ where: { killteamId: { in: killteams.map(kt => kt.killteamId) } }, orderBy: { seq: 'asc' } }),
+      // killteamId: null rows are universal equipment - `in` never matches NULL, so it must be OR'd in explicitly
+      prisma.equipment.findMany({ where: { OR: [{ killteamId: { in: killteams.map(kt => kt.killteamId) } }, { killteamId: null }] }, orderBy: { seq: 'asc' } }),
       prisma.ploy.findMany({ where: { killteamId: { in: killteams.map(kt => kt.killteamId) } }, orderBy: { seq: 'asc' } })
     ])
 

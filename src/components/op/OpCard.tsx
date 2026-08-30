@@ -1,12 +1,13 @@
 'use client'
 
+import { badgeClass } from '@/components/shared/Links'
 import { useLocalSettings } from '@/hooks/useLocalSettings'
 import { getOpPortraitUrl, toEpochMs } from '@/lib/utils/imageUrls'
 import { showInfoModal } from '@/lib/utils/showInfoModal'
-import { getOpTypeUniqueAbilitiesAndOptions, getOpUniqueAbilitiesAndOptions, getShortOpTypeName } from '@/lib/utils/utils'
+import { getOpTypeUniqueAbilitiesAndOptions, getOpUniqueAbilitiesAndOptions, getShortOpTypeName, parsePloyCPCost } from '@/lib/utils/utils'
 import { WeaponRule } from '@/lib/utils/weaponRules'
 import WeaponTable from '@/src/components/shared/WeaponTable'
-import { KillteamPlain, OpPlain, OpTypePlain, RosterPlain } from '@/types'
+import { KillteamPlain, OpPlain, OpTypePlain, PloyPlain, RosterPlain } from '@/types'
 import { Menu, MenuButton } from '@headlessui/react'
 import MDEditor, { commands } from '@uiw/react-md-editor'
 import { useEffect, useState } from 'react'
@@ -85,6 +86,19 @@ export default function OpCard({
   const { abilities: opTypeUniqueAbilities, options: opTypeUniqueOptions } = op.isOpType
     ? getOpTypeUniqueAbilitiesAndOptions(killteam ?? roster?.killteam ?? undefined, op as OpTypePlain)
     : { abilities: [], options: [] }
+
+  // Active Strategy ploys are usually passive round-long effects, not something you "use" - shown as Effects
+  const activePloyIds = !op.isOpType ? (roster?.ployIds?.split(',').filter(Boolean) ?? []) : []
+  const killteamPloys: PloyPlain[] = (killteam ?? roster?.killteam)?.ploys ?? []
+  const activeStrategyEffects = killteamPloys.filter((p) => p.ployType === 'S' && activePloyIds.includes(p.ployId))
+  // Firefight ploys (ployType !== 'S', matches RosterPloys.tsx convention) are always usable for CP, so list them
+  // as reference options regardless of the roster's active-ploy toggle state
+  const firefightPloyOptions = killteamPloys.filter((p) => p.ployType !== 'S')
+
+  // Equipment-derived options are tagged with the equipment's own eqId, which never collides with a native optionId format
+  const activeEquipmentIds = new Set((roster?.equipments ?? []).map((eq) => eq.eqId))
+  const nativeOptions = op.options?.filter((opt) => !activeEquipmentIds.has(opt.optionId)) ?? []
+  const equipmentOptions = op.options?.filter((opt) => activeEquipmentIds.has(opt.optionId)) ?? []
 
   useEffect(() => {
     !op.isOpType && setNewCurrWOUNDS(op.currWOUNDS ?? 0)
@@ -284,11 +298,27 @@ export default function OpCard({
           </div>
         )}
 
-        {/* Options */}
-        {!isCollapsed && (op.options?.length ?? 0) > 0 && (op.isOpType || (op.currWOUNDS !== 0 && op.isDeployed)) && (
+        {/* Effects - active Strategy ploys, passive for the round while selected */}
+        {!isCollapsed && activeStrategyEffects.length > 0 && (op.isOpType || (op.currWOUNDS !== 0 && op.isDeployed)) && (
+          <div className="border-t border-border grid grid-cols-2 mt-2">
+            <h6 className="text-muted">Effects</h6>
+            {activeStrategyEffects.map((ploy) => (
+              <span
+                key={ploy.ployId}
+                onClick={() => showDesc(ploy.ployName, ploy.description)}
+                className="cursor-pointer hover:text-main truncate overflow-hidden mr-2"
+              >
+                {ploy.ployName}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Options - OpType-native, equipment-derived (non-weapon), and Firefight ploys (always usable for CP) */}
+        {!isCollapsed && (nativeOptions.length + equipmentOptions.length + firefightPloyOptions.length) > 0 && (op.isOpType || (op.currWOUNDS !== 0 && op.isDeployed)) && (
           <div className="border-t border-border grid grid-cols-2 mt-2">
             <h6 className="text-muted">Options</h6>
-            {op.options?.map((opt) => (
+            {nativeOptions.map((opt) => (
               <span 
                 key={opt.optionId}
                 onClick={() => showDesc(opt.optionName, opt.description)} 
@@ -297,6 +327,29 @@ export default function OpCard({
                 {opt.optionName}
               </span>
             ))}
+            {equipmentOptions.map((opt) => (
+              <span 
+                key={opt.optionId}
+                onClick={() => showDesc(opt.optionName, opt.description)} 
+                className="cursor-pointer hover:text-main truncate overflow-hidden mr-2"
+              >
+                {opt.optionName.replace(/^Eq:\s*/, '')}
+              </span>
+            ))}
+            {firefightPloyOptions.map((ploy) => {
+              // Firefight ploys cost 1CP unless the ploy text states otherwise
+              const cpCost = parsePloyCPCost(ploy.description) ?? 1
+              return (
+                <span
+                  key={ploy.ployId}
+                  onClick={() => showDesc(ploy.ployName, ploy.description)}
+                  className="cursor-pointer hover:text-main truncate overflow-hidden mr-2 flex items-center gap-1"
+                >
+                  {ploy.ployName}
+                  <span className={`${badgeClass} text-xs shrink-0`}>{cpCost}CP</span>
+                </span>
+              )
+            })}
           </div>
         )}
 
