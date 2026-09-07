@@ -234,7 +234,17 @@ export default function RosterPageClient({
   const handleResetClick = () => { setShowResetModal(true)}
 
   const handleRosterPrint = () => {
-    window.print()
+    // Close any open dialogs so they don't end up in the printed output.
+    // The Headless UI menu closes itself on item click, but that unmount only
+    // happens on the next React commit - print after a paint so the DOM is clean.
+    setShowResetModal(false)
+    setShowEditRosterModal(false)
+    setShowDeploymentModal(false)
+    setCarouselIsOpen(false)
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.print())
+    })
   }
 
   const handleEditRosterClick = () => { setShowEditRosterModal(true)}
