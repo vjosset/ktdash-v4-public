@@ -27,7 +27,7 @@ export default function ImageModal({ src, alt, className }: ImageModalProps) {
       <Dialog 
         open={isOpen} 
         onClose={() => setIsOpen(false)}
-        className="relative z-50"
+        className="noprint relative z-50"
       >
         <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
         

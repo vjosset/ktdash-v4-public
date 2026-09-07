@@ -73,7 +73,7 @@ export default function RosterCard({
               </Link>
             </div>
             {isOwner && (
-              <Menu as="div" className="relative flex-shrink-0">
+              <Menu as="div" className="relative flex-shrink-0 noprint">
                 <MenuButton as="button" className="p-1">
                   <FiMoreVertical className="w-5 h-5" />
                 </MenuButton>

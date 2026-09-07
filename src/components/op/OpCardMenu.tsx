@@ -22,7 +22,7 @@ export default function OpCardMenu({
   onMoveLast?: () => void
 }) {
   return (
-    <MenuItems anchor="bottom end" className="m-1 z-50 w-64 origin-top-right rounded-md bg-card border border-main focus:outline-none divide-y divide-border">
+    <MenuItems anchor="bottom end" className="noprint m-1 z-50 w-64 origin-top-right rounded-md bg-card border border-main focus:outline-none divide-y divide-border">
       <div className="grid grid-cols-2 gap-1 p-1">
         {/* Left column: Move actions */}
         <div className="flex flex-col space-y-1">

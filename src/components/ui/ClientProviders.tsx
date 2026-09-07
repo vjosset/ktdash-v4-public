@@ -15,6 +15,7 @@ export function ClientProviders({ children, session }: Props) {
     <SessionProvider session={session}>
       {children}
       <Toaster
+        className="noprint"
         richColors={false}
         position="bottom-center"
         toastOptions={{

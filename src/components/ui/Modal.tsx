@@ -29,7 +29,7 @@ export default function Modal({
   }, [])
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+    <div className="noprint fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div
         className="bg-background text-foreground rounded-lg shadow-lg max-w-md w-full border border-border relative flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}

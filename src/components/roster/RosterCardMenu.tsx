@@ -68,7 +68,7 @@ export default function RosterCardMenu({
   }
 
   return (
-    <MenuItems anchor="bottom end" className={`m-1 z-50 ${showMoveCol ? 'w-64' : 'w-32'} origin-top-right rounded-md bg-card border border-main focus:outline-none divide-y divide-border`}>
+    <MenuItems anchor="bottom end" className={`noprint m-1 z-50 ${showMoveCol ? 'w-64' : 'w-32'} origin-top-right rounded-md bg-card border border-main focus:outline-none divide-y divide-border`}>
       <div className={`grid ${showMoveCol ? 'grid-cols-2' : 'grid-cols-1'} gap-1 p-1`}>
         {/* Left Column: Move Actions (only if any provided) */}
         {isOwner && showMoveCol && (

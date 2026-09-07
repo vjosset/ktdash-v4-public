@@ -52,7 +52,7 @@ const CarouselModal: React.FC<CarouselModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className={styles.backdrop} onClick={onClose}>
+    <div className={`noprint ${styles.backdrop}`} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.embla} ref={emblaRef}>
           <div className={styles.emblaContainer}>

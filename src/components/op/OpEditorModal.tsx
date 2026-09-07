@@ -269,7 +269,7 @@ export default function OpEditorModal({
                       {selectedOpType?.opTypeName || 'Select Op Type'}
                       <FiChevronDown className="w-4 h-4 text-muted-foreground" />
                     </ListboxButton>
-                    <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-card border border-border shadow-lg">
+                    <ListboxOptions className="noprint absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-card border border-border shadow-lg">
                       {opTypes.map((ot) => (
                         <ListboxOption
                           key={ot.opTypeId}
