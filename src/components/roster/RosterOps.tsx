@@ -1,7 +1,7 @@
 'use client'
 
 import Markdown from '@/components/ui/Markdown'
-import { getSetting } from '@/lib/settings'
+import { DEFAULT_SETTINGS, getSetting } from '@/lib/settings'
 import { CritOps, CritOps2024, KillOpChart, TacOps, TacOps2024 } from '@/lib/utils/operations'
 import { getRandom } from '@/lib/utils/utils'
 import { RosterPlain } from '@/types'
@@ -15,67 +15,73 @@ type RosterOpsProps = {
 }
 
 export default function RosterOps({ roster, onRosterUpdate }: RosterOpsProps) {
-  const critOps = getSetting('critOps') == '2024' ? CritOps2024 : CritOps
-  const tacOps = getSetting('tacOps') == '2024' ? TacOps2024 : TacOps
+  /*
+    Everything below is persisted in localStorage, which the server cannot see.
+    Reading it while rendering makes the client's first render disagree with the
+    server's HTML, which is exactly what React reports as a hydration error. So
+    the first render uses the same defaults the server used, and the stored
+    values are loaded once, after mount.
+  */
+  const [hydrated, setHydrated] = useState(false)
+  const [critOpsSetting, setCritOpsSetting] = useState<string>(DEFAULT_SETTINGS.critOps)
+  const [tacOpsSetting, setTacOpsSetting] = useState<string>(DEFAULT_SETTINGS.tacOps)
+  const [selectedCritOpTitle, setSelectedCritOpTitle] = useState('')
+  const [selectedTacOpTitle, setSelectedTacOpTitle] = useState('')
+  const [startingEnemyOps, setStartingEnemyOps] = useState('0')
+  const [primaryOp, setPrimaryOp] = useState('')
 
-  const [selectedCritOpTitle, setSelectedCritOpTitle] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('selectedCritOpTitle') || ''
-    }
-    return ''
-  })
-  const [selectedTacOpTitle, setSelectedTacOpTitle] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('selectedTacOpTitle') || ''
-    }
-    return ''
-  })
-  const [startingEnemyOps, setStartingEnemyOps] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('startingEnemyOps') || '0'
-    }
-    return '0'
-  })
-  const [primaryOp, setPrimaryOp] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('primaryOp') || ''
-    }
-    return ''
-  })
-  
+  useEffect(() => {
+    setCritOpsSetting(getSetting('critOps'))
+    setTacOpsSetting(getSetting('tacOps'))
+    setSelectedCritOpTitle(localStorage.getItem('selectedCritOpTitle') || '')
+    setSelectedTacOpTitle(localStorage.getItem('selectedTacOpTitle') || '')
+    setStartingEnemyOps(localStorage.getItem('startingEnemyOps') || '0')
+    setPrimaryOp(localStorage.getItem('primaryOp') || '')
+    setHydrated(true)
+  }, [])
+
+  const critOps = critOpsSetting == '2024' ? CritOps2024 : CritOps
+  const tacOps = tacOpsSetting == '2024' ? TacOps2024 : TacOps
+
   const teamTacOps = tacOps.filter((op) => roster?.killteam?.archetypes?.includes(op.archetype))
 
   useEffect(() => {
+    // Skip the mount pass: it would still hold the pre-load empty value and
+    // would wipe the selection the effect above is restoring
+    if (!hydrated) return
     if (selectedCritOpTitle) {
       localStorage.setItem('selectedCritOpTitle', selectedCritOpTitle)
     } else {
       localStorage.removeItem('selectedCritOpTitle')
     }
-  }, [selectedCritOpTitle])
+  }, [hydrated, selectedCritOpTitle])
 
   useEffect(() => {
+    if (!hydrated) return
     if (selectedTacOpTitle) {
       localStorage.setItem('selectedTacOpTitle', selectedTacOpTitle)
     } else {
       localStorage.removeItem('selectedTacOpTitle')
     }
-  }, [selectedTacOpTitle])
+  }, [hydrated, selectedTacOpTitle])
 
   useEffect(() => {
+    if (!hydrated) return
     if (startingEnemyOps) {
       localStorage.setItem('startingEnemyOps', startingEnemyOps)
     } else {
       localStorage.removeItem('startingEnemyOps')
     }
-  }, [startingEnemyOps])
+  }, [hydrated, startingEnemyOps])
 
   useEffect(() => {
+    if (!hydrated) return
     if (primaryOp) {
       localStorage.setItem('primaryOp', primaryOp)
     } else {
       localStorage.removeItem('primaryOp')
     }
-  }, [primaryOp])
+  }, [hydrated, primaryOp])
 
   const selectedCritOp = critOps.find(
     (m) => m.title === selectedCritOpTitle

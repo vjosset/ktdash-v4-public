@@ -2,7 +2,7 @@ import KillteamsPageContent from '@/app/killteams/KillteamsPageClient'
 import PageTitle from '@/components/ui/PageTitle'
 import { authOptions } from '@/lib/auth'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
-import { KillteamService } from '@/services'
+import { BattleService, KillteamService } from '@/services'
 import { getServerSession } from 'next-auth'
 
 type TabOption = 'standard' | 'homebrew' | 'stats'
@@ -56,6 +56,12 @@ export default async function KillteamsPage(
   const scope = tab === 'homebrew' ? 'homebrew' : tab === 'standard' ? 'standard' : 'all'
   const killteams = await KillteamService.getAllKillteams(scope, { userId: session?.user?.userId })
 
+  // Only queried for the tab that shows it - the page re-renders per tab anyway
+  const battlesEnabled = process.env.NEXT_PUBLIC_ENABLE_BATTLES === 'true'
+  const battleRecords = battlesEnabled && tab === 'stats'
+    ? await BattleService.getAllKillteamBattleRecords()
+    : []
+
   return (
     <div className="px-1 py-8 max-w-7xl mx-auto">
       <div className="text-center mb-8">
@@ -64,6 +70,8 @@ export default async function KillteamsPage(
       <KillteamsPageContent
         tab={tab}
         killteams={killteams.map((killteam) => killteam.toPlain())}
+        battlesEnabled={battlesEnabled}
+        battleRecords={battleRecords}
       />
     </div>
   )

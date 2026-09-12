@@ -1,13 +1,13 @@
 'use client'
 
 import { RosterLink, UserLink } from '@/components/shared/Links'
-import MatchRecord from '@/components/shared/MatchRecord'
-import { Button, Input, Label, Modal } from '@/components/ui'
-import { parseRosterId } from '@/lib/utils/utils'
-import { MatchOutcome, MatchResultPlain, MatchResultRosterInfo, RosterIdentity, RosterPlain } from '@/types'
+import BattleRecord from '@/components/shared/BattleRecord'
+import { Button, Input, Label, Modal, SectionTitle } from '@/components/ui'
+import { parseRosterId, toLocalDateTime } from '@/lib/utils/utils'
+import { BattleOutcome, BattlePlain, BattleRosterInfo, RosterIdentity, RosterPlain } from '@/types'
 import clsx from 'clsx'
 import { useCallback, useEffect, useState } from 'react'
-import { FiEdit2, FiRefreshCw } from 'react-icons/fi'
+import { FiCheck, FiEdit2, FiRefreshCw, FiTrash2 } from 'react-icons/fi'
 import { toast } from 'sonner'
 
 type Outcome = 'W' | 'L' | 'D'
@@ -17,10 +17,10 @@ type Outcome = 'W' | 'L' | 'D'
   Slot A / slot B never surface in the UI - the reporter should never have to
   reason about who is "A".
 */
-function perspectiveFor(match: MatchResultPlain, myRosterId: string) {
-  const isSlotA = match.rosterA.rosterId === myRosterId
-  const opponent: MatchResultRosterInfo = isSlotA ? match.rosterB : match.rosterA
-  const outcome: Outcome = match.result === 'D' ? 'D' : (match.result === 'A') === isSlotA ? 'W' : 'L'
+function perspectiveFor(battle: BattlePlain, myRosterId: string) {
+  const isSlotA = battle.rosterA.rosterId === myRosterId
+  const opponent: BattleRosterInfo = isSlotA ? battle.rosterB : battle.rosterA
+  const outcome: Outcome = battle.result === 'D' ? 'D' : (battle.result === 'A') === isSlotA ? 'W' : 'L'
 
   return {
     // Slot A is always the reporter, so this is also "did I report this?"
@@ -31,20 +31,16 @@ function perspectiveFor(match: MatchResultPlain, myRosterId: string) {
 }
 
 const outcomeClasses: Record<Outcome, string> = {
-  W: 'text-green-500 border-green-500',
-  L: 'text-red-500 border-red-500',
-  D: 'text-muted border-border',
-}
-
-function formatMatchDate(value: Date | string) {
-  return new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  W: 'text-green-500',
+  L: 'text-red-500',
+  D: 'text-muted',
 }
 
 /*
-  Renders a side of a match. A deleted roster keeps its snapshotted name, struck
+  Renders a side of a battle. A deleted roster keeps its snapshotted name, struck
   through, with nothing to link to.
 */
-function OpponentLabel({ opponent }: { opponent: MatchResultRosterInfo }) {
+function OpponentLabel({ opponent }: { opponent: BattleRosterInfo }) {
   if (!opponent.rosterId) {
     return <span className="line-through text-muted">{opponent.rosterName}</span>
   }
@@ -52,7 +48,7 @@ function OpponentLabel({ opponent }: { opponent: MatchResultRosterInfo }) {
   return <RosterLink rosterId={opponent.rosterId} rosterName={opponent.rosterName} />
 }
 
-export default function MatchResultsTab({
+export default function BattlesTab({
   roster,
   isOwner,
   isActive,
@@ -61,17 +57,17 @@ export default function MatchResultsTab({
   isOwner: boolean
   isActive: boolean
 }) {
-  const [matches, setMatches] = useState<MatchResultPlain[] | null>(null)
+  const [battles, setBattles] = useState<BattlePlain[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [showRecordModal, setShowRecordModal] = useState(false)
-  const [removing, setRemoving] = useState<MatchResultPlain | null>(null)
+  const [removing, setRemoving] = useState<BattlePlain | null>(null)
   const [busyId, setBusyId] = useState<number | null>(null)
-  const loadMatches = useCallback(async () => {
+  const loadBattles = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/rosters/${roster.rosterId}/matchResults`)
+      const res = await fetch(`/api/rosters/${roster.rosterId}/battles`)
       if (!res.ok) throw new Error('Failed')
-      setMatches(await res.json())
+      setBattles(await res.json())
     } catch {
       toast.error('Failed to load battles')
     } finally {
@@ -83,16 +79,16 @@ export default function MatchResultsTab({
   // moment ago appears without a page refresh
   useEffect(() => {
     if (!isActive) return
-    loadMatches()
-  }, [isActive, loadMatches])
+    loadBattles()
+  }, [isActive, loadBattles])
 
-  const handleConfirm = async (match: MatchResultPlain) => {
-    setBusyId(match.matchResultId)
+  const handleConfirm = async (battle: BattlePlain) => {
+    setBusyId(battle.battleId)
     try {
-      const res = await fetch(`/api/matchResults/${match.matchResultId}/confirm`, { method: 'PATCH' })
+      const res = await fetch(`/api/battles/${battle.battleId}/confirm`, { method: 'PATCH' })
       if (!res.ok) throw new Error('Failed')
-      const updated: MatchResultPlain = await res.json()
-      setMatches(prev => (prev ?? []).map(m => (m.matchResultId === updated.matchResultId ? updated : m)))
+      const updated: BattlePlain = await res.json()
+      setBattles(prev => (prev ?? []).map(b => (b.battleId === updated.battleId ? updated : b)))
       toast.success('Battle confirmed')
     } catch {
       toast.error('Failed to confirm battle')
@@ -105,12 +101,12 @@ export default function MatchResultsTab({
     Disputing (as the opponent) and withdrawing (as the reporter) are the same
     operation on the data - only the wording differs.
   */
-  const handleRemove = async (match: MatchResultPlain) => {
-    setBusyId(match.matchResultId)
+  const handleRemove = async (battle: BattlePlain) => {
+    setBusyId(battle.battleId)
     try {
-      const res = await fetch(`/api/matchResults/${match.matchResultId}`, { method: 'DELETE' })
+      const res = await fetch(`/api/battles/${battle.battleId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed')
-      setMatches(prev => (prev ?? []).filter(m => m.matchResultId !== match.matchResultId))
+      setBattles(prev => (prev ?? []).filter(b => b.battleId !== battle.battleId))
       toast.success('Battle removed')
     } catch {
       toast.error('Failed to remove battle')
@@ -120,11 +116,11 @@ export default function MatchResultsTab({
     }
   }
 
-  // Rule 9: records count confirmed matches only
-  const record = (matches ?? []).reduce(
-    (acc, match) => {
-      if (!match.isConfirmed) return acc
-      const { outcome } = perspectiveFor(match, roster.rosterId)
+  // Rule 9: records count confirmed battles only
+  const record = (battles ?? []).reduce(
+    (acc, battle) => {
+      if (!battle.isConfirmed) return acc
+      const { outcome } = perspectiveFor(battle, roster.rosterId)
       if (outcome === 'W') acc.wins += 1
       else if (outcome === 'L') acc.losses += 1
       else acc.draws += 1
@@ -133,83 +129,115 @@ export default function MatchResultsTab({
     { wins: 0, losses: 0, draws: 0 },
   )
 
+  // Draws are in the denominator, matching how the killteam stats tab reads
+  const recordedBattles = record.wins + record.losses + record.draws
+  const winRate = recordedBattles > 0 ? `${Math.round((record.wins / recordedBattles) * 100)}%` : '—'
+
   const removalIsDispute = removing ? !perspectiveFor(removing, roster.rosterId).isReporter : false
 
   return (
     <div className="max-w-2xl mx-auto px-2">
       {/* Record */}
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <MatchRecord wins={record.wins} losses={record.losses} draws={record.draws} />
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={loadMatches}
-            className="text-muted hover:text-main transition-colors p-1"
-            title="Refresh"
-            aria-label="Refresh battles"
-          >
-            <FiRefreshCw className={clsx(loading && 'animate-spin')} />
-          </button>
-          {isOwner && <Button onClick={() => setShowRecordModal(true)}>Record Battle</Button>}
+      <div className="flex items-start justify-between gap-2 mb-4">
+        <div className="border border-border rounded px-4 py-2">
+          <BattleRecord wins={record.wins} losses={record.losses} draws={record.draws} winRate={winRate} />
         </div>
+
+        {isOwner && <Button onClick={() => setShowRecordModal(true)}>Record Battle</Button>}
+      </div>
+
+      {/* Refresh sits with the heading rather than the Record button - it acts on
+          the list below it, not on the record above */}
+      <div className="flex items-center gap-2">
+        <SectionTitle>Battle History</SectionTitle>
+        <button
+          onClick={loadBattles}
+          className="text-muted hover:text-main transition-colors p-1"
+          title="Refresh"
+          aria-label="Refresh battles"
+        >
+          <FiRefreshCw className={clsx(loading && 'animate-spin')} />
+        </button>
       </div>
 
       {/* History - confirmed and pending in one list, newest first */}
-      {matches === null ? (
+      {battles === null ? (
         <p className="text-muted text-center py-8">Loading…</p>
-      ) : matches.length === 0 ? (
+      ) : battles.length === 0 ? (
         <p className="text-muted text-center py-8">
           No battles recorded yet.
-          {isOwner && ' Record one after your next game.'}
+          {isOwner && ' Record one after your next battle.'}
         </p>
       ) : (
-        <ul className="divide-y divide-border border-y border-border">
-          {matches.map(match => {
-            const { isReporter, opponent, outcome } = perspectiveFor(match, roster.rosterId)
-            const awaitingMe = !match.isConfirmed && !isReporter
-            const busy = busyId === match.matchResultId
+        <ul className="list-none pl-0 divide-y divide-border border-y border-border">
+          {battles.map(battle => {
+            const { isReporter, opponent, outcome } = perspectiveFor(battle, roster.rosterId)
+            const awaitingMe = !battle.isConfirmed && !isReporter
+            const busy = busyId === battle.battleId
 
             return (
-              <li key={match.matchResultId} className="py-2 flex items-start gap-3">
-                <span
-                  className={clsx(
-                    'flex-shrink-0 w-7 h-7 rounded border flex items-center justify-center font-bold',
-                    outcomeClasses[outcome],
-                    !match.isConfirmed && 'opacity-50',
-                  )}
-                  title={outcome === 'W' ? 'Win' : outcome === 'L' ? 'Loss' : 'Draw'}
-                >
-                  {outcome}
-                </span>
+              <li key={battle.battleId} className="py-2">
+                {/* The timestamp heads the entry on its own line, so it never has
+                    to share a row with the action buttons - confirmed and pending
+                    battles then lay out identically */}
+                <div className="text-xs text-muted">{toLocalDateTime(battle.battleDate)}</div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1 text-sm">
-                    <span className="text-muted">vs</span>
-                    <OpponentLabel opponent={opponent} />
-                    <span className="text-muted">by</span>
-                    <UserLink userName={opponent.userName} />
-                  </div>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <span
+                    className={clsx(
+                      'flex-shrink-0 w-4 text-center font-bold',
+                      outcomeClasses[outcome],
+                      !battle.isConfirmed && 'opacity-50',
+                    )}
+                    title={outcome === 'W' ? 'Win' : outcome === 'L' ? 'Loss' : 'Draw'}
+                  >
+                    {outcome}
+                  </span>
 
-                  <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-muted">
-                    <span>{formatMatchDate(match.matchDate)}</span>
-                    {!match.isConfirmed && (
-                      <span className="italic">
-                        {isReporter ? '· Awaiting their confirmation' : '· Awaiting your confirmation'}
-                      </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1 text-sm">
+                      <span className="text-muted">vs</span>
+                      <OpponentLabel opponent={opponent} />
+                      <span className="text-muted">by</span>
+                      <UserLink userName={opponent.userName} />
+                    </div>
+
+                    {!battle.isConfirmed && (
+                      <div className="mt-0.5 text-xs text-muted italic">
+                        {isReporter ? 'Awaiting their confirmation' : 'Awaiting your confirmation'}
+                      </div>
                     )}
                   </div>
 
-                  {/* Confirm and Dispute are weighted equally - disputing is not an accusation */}
-                  {isOwner && !match.isConfirmed && (
-                    <div className="flex gap-2 mt-2">
+                  {/*
+                    Confirm and Dispute are weighted equally - disputing is not an
+                    accusation - so both are plain icon buttons, distinguished only
+                    by the hover colour. Only the trash is guarded by a modal:
+                    confirming is terminal under rule 5 but is also the agreeable
+                    outcome, whereas the trash destroys the row for both players.
+                  */}
+                  {isOwner && !battle.isConfirmed && (
+                    <div className="flex items-center justify-end gap-1 flex-shrink-0">
                       {awaitingMe && (
-                        <Button onClick={() => handleConfirm(match)} disabled={busy}>
-                          Confirm
-                        </Button>
+                        <button
+                          onClick={() => handleConfirm(battle)}
+                          disabled={busy}
+                          className="text-muted hover:text-green-500 transition-colors p-1 disabled:opacity-40 disabled:hover:text-muted"
+                          title="Confirm"
+                          aria-label="Confirm battle"
+                        >
+                          <FiCheck />
+                        </button>
                       )}
-                      <Button variant="ghost" onClick={() => setRemoving(match)} disabled={busy}>
-                        {awaitingMe ? 'Dispute' : 'Withdraw'}
-                      </Button>
+                      <button
+                        onClick={() => setRemoving(battle)}
+                        disabled={busy}
+                        className="text-muted hover:text-red-500 transition-colors p-1 disabled:opacity-40 disabled:hover:text-muted"
+                        title={awaitingMe ? 'Dispute' : 'Withdraw'}
+                        aria-label={awaitingMe ? 'Dispute battle' : 'Withdraw battle'}
+                      >
+                        <FiTrash2 />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -224,7 +252,7 @@ export default function MatchResultsTab({
           roster={roster}
           onClose={() => setShowRecordModal(false)}
           onCreated={created => {
-            setMatches(prev => [created, ...(prev ?? [])])
+            setBattles(prev => [created, ...(prev ?? [])])
             setShowRecordModal(false)
           }}
         />
@@ -239,7 +267,7 @@ export default function MatchResultsTab({
               <Button variant="ghost" onClick={() => setRemoving(null)}>
                 Cancel
               </Button>
-              <Button onClick={() => handleRemove(removing)} disabled={busyId === removing.matchResultId}>
+              <Button onClick={() => handleRemove(removing)} disabled={busyId === removing.battleId}>
                 {removalIsDispute ? 'Dispute' : 'Withdraw'}
               </Button>
             </div>
@@ -267,11 +295,11 @@ function RecordBattleModal({
 }: {
   roster: RosterPlain
   onClose: () => void
-  onCreated: (match: MatchResultPlain) => void
+  onCreated: (battle: BattlePlain) => void
 }) {
   const [input, setInput] = useState('')
   const [opponent, setOpponent] = useState<RosterIdentity | null>(null)
-  const [outcome, setOutcome] = useState<MatchOutcome | null>(null)
+  const [outcome, setOutcome] = useState<BattleOutcome | null>(null)
   const [lookingUp, setLookingUp] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -311,7 +339,7 @@ function RecordBattleModal({
     setSubmitting(true)
     setError(null)
     try {
-      const res = await fetch('/api/matchResults', {
+      const res = await fetch('/api/battles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -325,8 +353,8 @@ function RecordBattleModal({
       if (res.status === 409) {
         // Duplicate guard warns, it does not block
         const body = await res.json()
-        const duplicate: MatchResultPlain | undefined = body?.duplicateOf
-        const when = duplicate?.matchDate ? formatMatchDate(duplicate.matchDate) : 'recently'
+        const duplicate: BattlePlain | undefined = body?.duplicateOf
+        const when = duplicate?.battleDate ? toLocalDateTime(duplicate.battleDate) : 'recently'
         const reportedByMe = duplicate?.rosterA?.rosterId === roster.rosterId
         setDuplicateWarning(
           reportedByMe
@@ -342,7 +370,7 @@ function RecordBattleModal({
         return
       }
 
-      const created: MatchResultPlain = await res.json()
+      const created: BattlePlain = await res.json()
       toast.success('Battle recorded — waiting on your opponent to confirm')
       onCreated(created)
     } catch {
@@ -352,7 +380,7 @@ function RecordBattleModal({
     }
   }
 
-  const outcomeOptions: { label: string; value: MatchOutcome }[] = [
+  const outcomeOptions: { label: string; value: BattleOutcome }[] = [
     { label: 'I Won', value: 'A' },
     { label: 'Draw', value: 'D' },
     { label: 'They Won', value: 'B' },

@@ -1,30 +1,30 @@
 /*
-  A MatchResult is a two-party attestation about a game played on a physical
+  A Battle is a two-party attestation about a game played on a physical
   tabletop. The server cannot verify it, so one player reports and the other
   confirms. "A" and "B" are slots, not roles - `result` names the slot that won,
   never "the reporter" - so allowing either side to initiate needs no migration.
   Today the reporter is always slot A.
 */
 
-export const MATCH_OUTCOME = {
+export const BATTLE_OUTCOME = {
   ROSTER_A: 'A',
   ROSTER_B: 'B',
   DRAW: 'D',
 } as const
 
-export type MatchOutcome = typeof MATCH_OUTCOME[keyof typeof MATCH_OUTCOME]
+export type BattleOutcome = typeof BATTLE_OUTCOME[keyof typeof BATTLE_OUTCOME]
 
-export function isMatchOutcome(value: unknown): value is MatchOutcome {
-  return value === MATCH_OUTCOME.ROSTER_A || value === MATCH_OUTCOME.ROSTER_B || value === MATCH_OUTCOME.DRAW
+export function isBattleOutcome(value: unknown): value is BattleOutcome {
+  return value === BATTLE_OUTCOME.ROSTER_A || value === BATTLE_OUTCOME.ROSTER_B || value === BATTLE_OUTCOME.DRAW
 }
 
 /*
-  One side of a match, resolved live-or-snapshot: the live relation is preferred
+  One side of a battle, resolved live-or-snapshot: the live relation is preferred
   so renames show through, and the snapshot takes over once the roster is gone.
   A null rosterId is the signal that this side was deleted - it renders struck
   through, with nothing to link to.
 */
-export type MatchResultRosterInfo = {
+export type BattleRosterInfo = {
   rosterId: string | null
   userId: string | null
   rosterName: string
@@ -33,25 +33,25 @@ export type MatchResultRosterInfo = {
   killteamName: string
 }
 
-export type MatchResultPlain = {
-  matchResultId: number
-  result: MatchOutcome
+export type BattlePlain = {
+  battleId: number
+  result: BattleOutcome
   isConfirmed: boolean
-  matchDate: Date
-  rosterA: MatchResultRosterInfo
-  rosterB: MatchResultRosterInfo
+  battleDate: Date
+  rosterA: BattleRosterInfo
+  rosterB: BattleRosterInfo
   eloBeforeA: number | null
   eloBeforeB: number | null
   eloAfterA: number | null
   eloAfterB: number | null
 }
 
-export class MatchResult {
-  matchResultId: number
-  result: MatchOutcome
-  matchDate: Date
-  rosterA: MatchResultRosterInfo
-  rosterB: MatchResultRosterInfo
+export class Battle {
+  battleId: number
+  result: BattleOutcome
+  battleDate: Date
+  rosterA: BattleRosterInfo
+  rosterB: BattleRosterInfo
   eloBeforeA: number | null
   eloBeforeB: number | null
   eloAfterA: number | null
@@ -62,21 +62,21 @@ export class MatchResult {
   private rosterBConfirmed: boolean
 
   constructor(data: {
-    matchResultId: number
-    result: MatchOutcome
+    battleId: number
+    result: BattleOutcome
     rosterBConfirmed: boolean
-    matchDate: Date
-    rosterA: MatchResultRosterInfo
-    rosterB: MatchResultRosterInfo
+    battleDate: Date
+    rosterA: BattleRosterInfo
+    rosterB: BattleRosterInfo
     eloBeforeA?: number | null
     eloBeforeB?: number | null
     eloAfterA?: number | null
     eloAfterB?: number | null
   }) {
-    this.matchResultId = data.matchResultId
+    this.battleId = data.battleId
     this.result = data.result
     this.rosterBConfirmed = data.rosterBConfirmed
-    this.matchDate = data.matchDate
+    this.battleDate = data.battleDate
     this.rosterA = data.rosterA
     this.rosterB = data.rosterB
     this.eloBeforeA = data.eloBeforeA ?? null
@@ -93,12 +93,12 @@ export class MatchResult {
     return !this.rosterBConfirmed
   }
 
-  toPlain(): MatchResultPlain {
+  toPlain(): BattlePlain {
     return {
-      matchResultId: this.matchResultId,
+      battleId: this.battleId,
       result: this.result,
       isConfirmed: this.rosterBConfirmed,
-      matchDate: this.matchDate,
+      battleDate: this.battleDate,
       rosterA: this.rosterA,
       rosterB: this.rosterB,
       eloBeforeA: this.eloBeforeA,
@@ -110,8 +110,8 @@ export class MatchResult {
 }
 
 /*
-  Aggregate record for one killteam, built from the snapshot columns so matches
-  survive the deletion of the rosters that played them.
+  Aggregate record for one killteam, built from the snapshot columns so battles
+  survive the deletion of the rosters that fought them.
 */
 export type KillteamMatchup = {
   killteamId: string
@@ -119,29 +119,41 @@ export type KillteamMatchup = {
   wins: number
   losses: number
   draws: number
-  games: number
+  battles: number
 }
 
-export type KillteamMatchStats = {
+export type KillteamBattleStats = {
   wins: number
   losses: number
   draws: number
-  games: number
+  battles: number
   // Same killteam on both sides: one row would be a win and a loss at once, so
   // these are counted but excluded from the record and the matchup rows.
-  mirrorGames: number
+  mirrorBattles: number
   matchups: KillteamMatchup[]
 }
 
-export const MATCH_STATS_PERIOD = {
+/*
+  One killteam's headline record, for the killteams index. Same shape as
+  KillteamMatchup without the name, which that page already has.
+*/
+export type KillteamBattleRecord = {
+  killteamId: string
+  wins: number
+  losses: number
+  draws: number
+  battles: number
+}
+
+export const BATTLE_STATS_PERIOD = {
   ALL: 'all',
   SIX_MONTHS: '6m',
   THREE_MONTHS: '3m',
   ONE_MONTH: '1m',
 } as const
 
-export type MatchStatsPeriod = typeof MATCH_STATS_PERIOD[keyof typeof MATCH_STATS_PERIOD]
+export type BattleStatsPeriod = typeof BATTLE_STATS_PERIOD[keyof typeof BATTLE_STATS_PERIOD]
 
-export function isMatchStatsPeriod(value: unknown): value is MatchStatsPeriod {
-  return Object.values(MATCH_STATS_PERIOD).includes(value as MatchStatsPeriod)
+export function isBattleStatsPeriod(value: unknown): value is BattleStatsPeriod {
+  return Object.values(BATTLE_STATS_PERIOD).includes(value as BattleStatsPeriod)
 }

@@ -1,24 +1,40 @@
 import { getAuthSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { toLocalIsoDate } from '@/lib/utils/utils'
+import { resolveTimeZone, toZonedIsoDate } from '@/lib/utils/utils'
+import { BattleService } from '@/services'
+import { BattlePlain } from '@/types'
 import { NextResponse } from 'next/server'
 
+const RECENT_BATTLE_LIMIT = 30
+
 // Get the stats
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getAuthSession()
   if (!session?.user || session.user.userId != 'vince') return new NextResponse('Unauthorized', { status: 401 })
-    
-  const days = getLastNDates(9)
-  const startDate = new Date(days[days.length - 1])
-  const endDate = new Date()
-  endDate.setDate(endDate.getDate() + 1) // to include today fully
+
+  // Days are bucketed in the viewer's zone, not the server's - the two are
+  // rarely the same, and an evening event should land on the day the viewer
+  // thinks it happened. Falls back to UTC when the client sends nothing usable.
+  const timeZone = resolveTimeZone(new URL(req.url).searchParams.get('tz'))
+
+  const days = getLastNDates(9, timeZone)
+
+  // Query a UTC window a day wider on each side than the local days reported: a
+  // zone can sit up to 14 hours off UTC, so a local day can begin on the previous
+  // UTC day and end on the next. Rows outside the reported range land in buckets
+  // that nothing reads.
+  const startDate = new Date(`${days[days.length - 1]}T00:00:00Z`)
+  startDate.setUTCDate(startDate.getUTCDate() - 1)
+  const endDate = new Date(`${days[0]}T00:00:00Z`)
+  endDate.setUTCDate(endDate.getUTCDate() + 2)
 
   const stats: {
     datestamp: Date
     totals: { users: number; rosters: number; ops: number }
     dailyStats: Record<string, any>
     portraitEvents: any[]
-    activeUsers30min: number
+    recentBattles: BattlePlain[]
+    activeVisitors30min: number
     events30min: number
   } = {
     datestamp: new Date(),
@@ -29,7 +45,8 @@ export async function GET() {
     },
     dailyStats: {},
     portraitEvents: [],
-    activeUsers30min: 0,
+    recentBattles: [],
+    activeVisitors30min: 0,
     events30min: 0
   }
   
@@ -72,10 +89,10 @@ export async function GET() {
           notIn: excludedUserIds
         }
       },
-      select: { datestamp: true, userId: true, userIp: true }
+      select: { datestamp: true, userId: true, userIp: true, visitorId: true }
     }),
     prisma.webEvent.groupBy({
-      by: ['userId', 'userIp'], // distinct concat equivalent
+      by: ['visitorId', 'userIp'], // userIp is only here as the fallback key for rows with no visitorId
       where: {
         datestamp: { gte: cutoff30m },
         userIp: { notIn: excludedIps },
@@ -93,60 +110,69 @@ export async function GET() {
     })
   ])
   
-  stats.activeUsers30min = recentActiveUsers.length
+  // One visitor can appear on several rows (multiple IPs), so collapse them onto
+  // the visitor key before counting
+  stats.activeVisitors30min = new Set(
+    recentActiveUsers
+      .map(r => r.visitorId ?? r.userIp)
+      .filter(Boolean)
+  ).size
   stats.events30min = events30m
 
   // Group into { 'YYYY-MM-DD': count }
   const pageViewsPerDay: Record<string, number> = {}
-  const distinctUsersPerDay = new Map<string, {
+  // Distinct visitors (browser/device), keyed on visitorId. Rows written before
+  // visitorId shipped fall back to userIp so history isn't collapsed into one bucket.
+  const distinctVisitorsPerDay = new Map<string, {
     all: Set<string>
     loggedIn: Set<string>
-    anonymous: Set<string>
   }>()
 
   for (const e of pageViews) {
-    const date = toLocalIsoDate(e.datestamp)
+    const date = toZonedIsoDate(e.datestamp, timeZone)
     pageViewsPerDay[date] = (pageViewsPerDay[date] || 0) + 1
 
-    if (!distinctUsersPerDay.has(date)) {
-      distinctUsersPerDay.set(date, {
+    const visitorKey = e.visitorId ?? e.userIp
+    if (!visitorKey) continue
+
+    if (!distinctVisitorsPerDay.has(date)) {
+      distinctVisitorsPerDay.set(date, {
         all: new Set(),
-        loggedIn: new Set(),
-        anonymous: new Set()
+        loggedIn: new Set()
       })
     }
 
-    const bucket = distinctUsersPerDay.get(date)!
+    const bucket = distinctVisitorsPerDay.get(date)!
+    bucket.all.add(visitorKey)
 
+    // A visitor who browses anonymously and then logs in emits rows under the same
+    // visitorId with two different userIds. Count them once, on the logged-in side,
+    // and derive anonymous by subtraction below rather than counting '[anon]' rows.
     if (e.userId && e.userId !== '[anon]') {
-      bucket.loggedIn.add(e.userId)
-      bucket.all.add(`user:${e.userId}`)
-    } else if (e.userIp) {
-      bucket.anonymous.add(e.userIp)
-      bucket.all.add(`anon:${e.userIp}`)
+      bucket.loggedIn.add(visitorKey)
     }
   }
   
   const signupsPerDay: Record<string, number> = {}
 
   for (const u of recentSignups) {
-    const date = toLocalIsoDate(u.createdAt)
+    const date = toZonedIsoDate(u.createdAt, timeZone)
     signupsPerDay[date] = (signupsPerDay[date] || 0) + 1
   }
 
   // Merge into array for frontend
   stats.dailyStats = days.map(date => {
-    const userSets = distinctUsersPerDay.get(date)
-    const uniqueLoggedInUsers = userSets?.loggedIn.size ?? 0
-    const uniqueAnonymousUsers = userSets?.anonymous.size ?? 0
+    const visitorSets = distinctVisitorsPerDay.get(date)
+    const uniqueVisitors = visitorSets?.all.size ?? 0
+    const loggedInVisitors = visitorSets?.loggedIn.size ?? 0
 
     return {
       date,
       views: pageViewsPerDay[date] || 0,
       signups: signupsPerDay[date] || 0,
-      uniqueUsers: userSets?.all.size ?? 0,
-      uniqueLoggedInUsers,
-      uniqueAnonymousUsers
+      uniqueVisitors,
+      loggedInVisitors,
+      anonymousVisitors: uniqueVisitors - loggedInVisitors
     }
   })
 
@@ -218,17 +244,29 @@ export async function GET() {
 
   stats.portraitEvents = portraitCompleteRosters
 
+  // Gated on the same flag the roster and killteam pages read, so the admin view
+  // doesn't advertise a feature that is switched off everywhere else
+  if (process.env.NEXT_PUBLIC_ENABLE_BATTLES === 'true') {
+    const recentBattles = await BattleService.getRecentBattles(RECENT_BATTLE_LIMIT)
+    stats.recentBattles = recentBattles.map(b => b.toPlain())
+  }
+
   return NextResponse.json(stats)
 }
 
-function getLastNDates(n: number): string[] {
+/*
+  The last n calendar dates in the viewer's zone, newest first. Stepping happens
+  on a UTC-midnight anchor so it stays pure calendar arithmetic - stepping a
+  zoned Date instead would shift by an hour across a DST boundary and could
+  repeat or skip a day.
+*/
+function getLastNDates(n: number, timeZone: string): string[] {
+  const anchor = new Date(`${toZonedIsoDate(new Date(), timeZone)}T00:00:00Z`)
   const dates: string[] = []
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
 
   for (let i = 0; i < n; i++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - i)
+    const d = new Date(anchor)
+    d.setUTCDate(anchor.getUTCDate() - i)
     dates.push(d.toISOString().split('T')[0]) // 'YYYY-MM-DD'
   }
 

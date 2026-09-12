@@ -1,62 +1,62 @@
 import { KillteamRepository } from '@/src/repositories/killteam.repository'
-import { MatchResultRepository, toMatchResult } from '@/src/repositories/matchResult.repository'
+import { BattleRepository, toBattle } from '@/src/repositories/battle.repository'
 import { RosterRepository } from '@/src/repositories/roster.repository'
-import { KillteamMatchStats, KillteamMatchup, MATCH_STATS_PERIOD, MatchOutcome, MatchResult, MatchResultPlain, MatchStatsPeriod, RosterIdentity } from '@/types'
+import { KillteamBattleRecord, KillteamBattleStats, KillteamMatchup, BATTLE_STATS_PERIOD, BattleOutcome, Battle, BattlePlain, BattleStatsPeriod, RosterIdentity } from '@/types'
 
 /*
   Guards from the spec's rules 6 and 7. The cap is what prevents queue-flooding
   now that disputed rows leave no trace behind them.
 */
-const PERIOD_MONTHS: Record<MatchStatsPeriod, number | null> = {
-  [MATCH_STATS_PERIOD.ALL]: null,
-  [MATCH_STATS_PERIOD.SIX_MONTHS]: 6,
-  [MATCH_STATS_PERIOD.THREE_MONTHS]: 3,
-  [MATCH_STATS_PERIOD.ONE_MONTH]: 1,
+const PERIOD_MONTHS: Record<BattleStatsPeriod, number | null> = {
+  [BATTLE_STATS_PERIOD.ALL]: null,
+  [BATTLE_STATS_PERIOD.SIX_MONTHS]: 6,
+  [BATTLE_STATS_PERIOD.THREE_MONTHS]: 3,
+  [BATTLE_STATS_PERIOD.ONE_MONTH]: 1,
 }
 
 export const PENDING_REPORT_CAP = 3
 export const DUPLICATE_WARNING_HOURS = 12
 
-export type CreateMatchResultOutcome =
-  | { ok: true; matchResult: MatchResult }
-  | { ok: false; status: number; error: string; duplicateOf?: MatchResultPlain }
+export type CreateBattleOutcome =
+  | { ok: true; battle: Battle }
+  | { ok: false; status: number; error: string; duplicateOf?: BattlePlain }
 
-export class MatchResultService {
-  private static repository = new MatchResultRepository()
+export class BattleService {
+  private static repository = new BattleRepository()
   private static rosterRepository = new RosterRepository()
   private static killteamRepository = new KillteamRepository()
 
-  static async getMatchResult(matchResultId: number): Promise<MatchResult | null> {
-    const row = await this.repository.getMatchResult(matchResultId)
-    return row ? toMatchResult(row) : null
+  static async getBattle(battleId: number): Promise<Battle | null> {
+    const row = await this.repository.getBattle(battleId)
+    return row ? toBattle(row) : null
   }
 
   /*
     Viewer-aware: the owner of the roster also sees results still awaiting
     confirmation. Everyone else sees confirmed results only.
   */
-  static async getMatchResultsForRoster(rosterId: string, viewerUserId?: string | null): Promise<MatchResult[]> {
+  static async getBattlesForRoster(rosterId: string, viewerUserId?: string | null): Promise<Battle[]> {
     const identity = await this.rosterRepository.getRosterIdentityRow(rosterId)
     if (!identity) return []
 
     const isOwner = !!viewerUserId && identity.userId === viewerUserId
-    const rows = await this.repository.getMatchResultsForRoster(rosterId, isOwner)
-    return rows.map(toMatchResult)
+    const rows = await this.repository.getBattlesForRoster(rosterId, isOwner)
+    return rows.map(toBattle)
   }
 
-  static async createMatchResult(params: {
+  static async createBattle(params: {
     rosterA: RosterIdentity
     rosterB: RosterIdentity
-    result: MatchOutcome
+    result: BattleOutcome
     acknowledgeDuplicate?: boolean
-  }): Promise<CreateMatchResultOutcome> {
+  }): Promise<CreateBattleOutcome> {
     const { rosterA, rosterB, result, acknowledgeDuplicate } = params
 
     if (rosterA.rosterId === rosterB.rosterId) {
       return { ok: false, status: 400, error: 'A roster cannot fight itself.' }
     }
 
-    // Rule 2: a match result is an attestation between two people
+    // Rule 2: a battle is an attestation between two people
     if (rosterA.userId === rosterB.userId) {
       return { ok: false, status: 400, error: 'Both rosters belong to the same player.' }
     }
@@ -67,7 +67,7 @@ export class MatchResultService {
       return {
         ok: false,
         status: 429,
-        error: `You already have ${pending} results awaiting this player's confirmation. Wait for those before reporting another.`,
+        error: `You already have ${pending} battles awaiting this player's confirmation. Wait for those before reporting another.`,
       }
     }
 
@@ -79,13 +79,13 @@ export class MatchResultService {
         return {
           ok: false,
           status: 409,
-          error: 'These two rosters already have a result reported recently.',
-          duplicateOf: toMatchResult(recent).toPlain(),
+          error: 'These two rosters already have a battle reported recently.',
+          duplicateOf: toBattle(recent).toPlain(),
         }
       }
     }
 
-    const row = await this.repository.createMatchResult({
+    const row = await this.repository.createBattle({
       rosterAId: rosterA.rosterId,
       rosterBId: rosterB.rosterId,
       result,
@@ -99,7 +99,7 @@ export class MatchResultService {
       rosterBKillteamNameSnap: rosterB.killteamName,
     })
 
-    return { ok: true, matchResult: toMatchResult(row) }
+    return { ok: true, battle: toBattle(row) }
   }
 
   /*
@@ -107,10 +107,10 @@ export class MatchResultService {
     opponents are left out of both the rows and the totals, so the table always
     sums to the headline record.
   */
-  static async getKillteamMatchStats(
+  static async getKillteamBattleStats(
     killteamId: string,
-    period: MatchStatsPeriod = MATCH_STATS_PERIOD.ALL,
-  ): Promise<KillteamMatchStats> {
+    period: BattleStatsPeriod = BATTLE_STATS_PERIOD.ALL,
+  ): Promise<KillteamBattleStats> {
     const months = PERIOD_MONTHS[period]
     let since: Date | null = null
     if (months !== null) {
@@ -126,7 +126,7 @@ export class MatchResultService {
     const [asA, asB] = await this.repository.getKillteamMatchupRows(killteamId, since)
 
     const tally = new Map<string, { wins: number; losses: number; draws: number }>()
-    let mirrorGames = 0
+    let mirrorBattles = 0
 
     const add = (opponentId: string, result: string, thisSlot: 'A' | 'B', count: number) => {
       const entry = tally.get(opponentId) ?? { wins: 0, losses: 0, draws: 0 }
@@ -138,9 +138,9 @@ export class MatchResultService {
 
     asA.forEach(row => {
       const count = row._count._all
-      // Mirror matches only appear in this pass; the second pass filters them out
+      // Mirror battles only appear in this pass; the second pass filters them out
       if (row.rosterBKillteamIdSnap === killteamId) {
-        mirrorGames += count
+        mirrorBattles += count
         return
       }
       add(row.rosterBKillteamIdSnap, row.result, 'A', count)
@@ -160,7 +160,7 @@ export class MatchResultService {
         wins: entry.wins,
         losses: entry.losses,
         draws: entry.draws,
-        games: entry.wins + entry.losses + entry.draws,
+        battles: entry.wins + entry.losses + entry.draws,
       }
     })
 
@@ -168,18 +168,79 @@ export class MatchResultService {
       wins: matchups.reduce((sum, m) => sum + m.wins, 0),
       losses: matchups.reduce((sum, m) => sum + m.losses, 0),
       draws: matchups.reduce((sum, m) => sum + m.draws, 0),
-      games: matchups.reduce((sum, m) => sum + m.games, 0),
-      mirrorGames,
-      matchups: matchups.sort((a, b) => b.games - a.games),
+      battles: matchups.reduce((sum, m) => sum + m.battles, 0),
+      mirrorBattles,
+      matchups: matchups.sort((a, b) => b.battles - a.battles),
     }
   }
 
-  static async confirmMatch(matchResultId: number): Promise<MatchResult> {
-    const row = await this.repository.confirmMatch(matchResultId)
-    return toMatchResult(row)
+  /*
+    Newest battles site-wide for the admin view, confirmed and pending alike.
+    Not viewer-aware - callers are responsible for restricting this to admins.
+  */
+  static async getRecentBattles(limit: number): Promise<Battle[]> {
+    const rows = await this.repository.getRecentBattles(limit)
+    return rows.map(toBattle)
   }
 
-  static async deleteMatchResult(matchResultId: number): Promise<void> {
-    await this.repository.deleteMatchResult(matchResultId)
+  /*
+    Every official killteam's all-time record, for the killteams index. Applies
+    the same two exclusions as getKillteamBattleStats - mirrors, and any battle
+    involving a homebrew team - so a killteam's win rate here agrees with the one
+    on its own page. Teams with no qualifying battles are simply absent.
+  */
+  static async getAllKillteamBattleRecords(): Promise<KillteamBattleRecord[]> {
+    const rows = await this.repository.getAllKillteamMatchupRows()
+
+    const seen = new Set<string>()
+    rows.forEach(row => {
+      seen.add(row.rosterAKillteamIdSnap)
+      seen.add(row.rosterBKillteamIdSnap)
+    })
+
+    // factionId is the authority on homebrew, not the id, so this has to resolve
+    // against the live Killteam table
+    const officialRows = await this.killteamRepository.getOfficialKillteamNameRows([...seen])
+    const official = new Set(officialRows.map(row => row.killteamId))
+
+    const tally = new Map<string, { wins: number; losses: number; draws: number }>()
+
+    const add = (killteamId: string, result: string, thisSlot: 'A' | 'B', count: number) => {
+      const entry = tally.get(killteamId) ?? { wins: 0, losses: 0, draws: 0 }
+      if (result === 'D') entry.draws += count
+      else if (result === thisSlot) entry.wins += count
+      else entry.losses += count
+      tally.set(killteamId, entry)
+    }
+
+    rows.forEach(row => {
+      const a = row.rosterAKillteamIdSnap
+      const b = row.rosterBKillteamIdSnap
+
+      // A mirror is a win and a loss at once, so it says nothing about the team
+      if (a === b) return
+      // A battle involving homebrew counts for neither side
+      if (!official.has(a) || !official.has(b)) return
+
+      add(a, row.result, 'A', row._count._all)
+      add(b, row.result, 'B', row._count._all)
+    })
+
+    return [...tally.entries()].map(([killteamId, entry]) => ({
+      killteamId,
+      wins: entry.wins,
+      losses: entry.losses,
+      draws: entry.draws,
+      battles: entry.wins + entry.losses + entry.draws,
+    }))
+  }
+
+  static async confirmBattle(battleId: number): Promise<Battle> {
+    const row = await this.repository.confirmBattle(battleId)
+    return toBattle(row)
+  }
+
+  static async deleteBattle(battleId: number): Promise<void> {
+    await this.repository.deleteBattle(battleId)
   }
 }

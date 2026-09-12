@@ -1,9 +1,50 @@
 import { AbilityPlain, KillteamPlain, OpPlain, OptionPlain, OpType, OpTypePlain, RosterPlain } from '@/types'
+import { format } from 'date-fns'
 import { customAlphabet } from 'nanoid'
 
-export function toLocalIsoDate(date: Date): string {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-  return local.toISOString().split('T')[0] // YYYY-MM-DD
+/*
+  The calendar date a given instant falls on, in a specific IANA timezone.
+  Intl is the only dependency-free way to get this right: the getTimezoneOffset
+  approach is locked to whatever zone the Node process happens to run in, which
+  is not the viewer's, and it breaks across DST boundaries.
+*/
+export function toZonedIsoDate(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+
+  const get = (type: string) => parts.find(p => p.type === type)!.value
+  return `${get('year')}-${get('month')}-${get('day')}` // YYYY-MM-DD
+}
+
+/*
+  Validate a client-supplied IANA zone, falling back to UTC. Intl throwing a
+  RangeError is the only reliable way to test one, and a bad value is a client
+  bug rather than a reason to fail the whole request.
+*/
+export function resolveTimeZone(value: string | null | undefined): string {
+  if (!value) return 'UTC'
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value })
+    return value
+  } catch {
+    return 'UTC'
+  }
+}
+
+/*
+  Timestamps shift into the viewer's own timezone but always render in the same
+  pattern, so the same moment reads identically everywhere in the app.
+  Deliberately not toLocaleString, which reorders the fields per locale
+  (03/09 vs 09/03) and makes two timestamps on one screen disagree.
+  Accepts a string because dates arrive from the API as JSON.
+*/
+export function toLocalDateTime(value: Date | string): string {
+  return format(new Date(value), 'yyyy-MM-dd HH:mm')
 }
 
 export function getRandom<T>(array: T[]): T {

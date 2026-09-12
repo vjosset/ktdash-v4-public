@@ -52,12 +52,14 @@ export default function RosterEquipment({ killteam, roster, onRosterUpdate }: Ro
         ?.filter(eq => rosterEqIds.includes(eq.eqId))
         .map(eq => (
           <div key={eq.eqId}
-            onClick={() => toggleEquipment(eq.eqId)}>
+            onClick={(e) => { if ((e.target as HTMLElement).tagName === 'INPUT') return; toggleEquipment(eq.eqId) }}>
             <div className="flex items-center gap-2">
               <h6 className="text-main">
                 <Checkbox
                   className="mr-2"
                   checked={rosterEqIds.includes(eq.eqId)}
+                  onChange={() => toggleEquipment(eq.eqId)}
+                  aria-label={eq.eqName}
                 />
                 {eq.eqName}
               </h6>
@@ -73,14 +75,15 @@ export default function RosterEquipment({ killteam, roster, onRosterUpdate }: Ro
       {bespokeEq?.map((eq) => {
         return (
           <div key={eq.eqId}
-            onClick={() => roster && toggleEquipment(eq.eqId)}>
+            onClick={(e) => { if ((e.target as HTMLElement).tagName === 'INPUT') return; if (roster) toggleEquipment(eq.eqId) }}>
             <div className="flex items-center gap-2">
               <h6 className="text-main">
                 {roster && (
                   <Checkbox
                     className="mr-2"
                     checked={rosterEqIds.includes(eq.eqId)}
-                    onChange={() => {}} /* Handled by parent container */
+                    onChange={() => toggleEquipment(eq.eqId)}
+                    aria-label={eq.eqName}
                   />
                 )}
                 {eq.eqName}
@@ -98,14 +101,15 @@ export default function RosterEquipment({ killteam, roster, onRosterUpdate }: Ro
       {universalEq && universalEq.map((eq) => {
         return (
           <div key={eq.eqId}
-            onClick={() => roster && toggleEquipment(eq.eqId)}>
+            onClick={(e) => { if ((e.target as HTMLElement).tagName === 'INPUT') return; if (roster) toggleEquipment(eq.eqId) }}>
             <div className="flex items-center gap-2">
               <h6 className="text-main">
                 {roster && (
                   <Checkbox
                     className="mr-2"
                     checked={rosterEqIds.includes(eq.eqId)}
-                    readOnly
+                    onChange={() => toggleEquipment(eq.eqId)}
+                    aria-label={eq.eqName}
                   />
                 )}
                 {eq.eqName}

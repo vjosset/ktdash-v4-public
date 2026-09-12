@@ -1,43 +1,43 @@
 'use client'
 
 import { KillteamLink } from '@/components/shared/Links'
-import MatchRecord from '@/components/shared/MatchRecord'
-import { MATCH_STATS_PERIOD, MatchStatsPeriod, KillteamMatchStats as Stats } from '@/types'
+import { KillteamBattleStats as Stats, KillteamMatchup } from '@/types'
 import clsx from 'clsx'
 import { useEffect, useMemo, useState } from 'react'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
 
-const periods: { value: MatchStatsPeriod; label: string }[] = [
-  { value: MATCH_STATS_PERIOD.ALL, label: 'All time' },
-  { value: MATCH_STATS_PERIOD.SIX_MONTHS, label: 'Last 6 months' },
-  { value: MATCH_STATS_PERIOD.THREE_MONTHS, label: 'Last 3 months' },
-  { value: MATCH_STATS_PERIOD.ONE_MONTH, label: 'Last month' },
-]
-
-type SortKey = 'killteamName' | 'wins' | 'losses' | 'draws' | 'games'
+type SortKey = 'killteamName' | 'winRate'
 
 const columns: { key: SortKey; label: string; numeric: boolean }[] = [
   { key: 'killteamName', label: 'Opponent', numeric: false },
-  { key: 'wins', label: 'W', numeric: true },
-  { key: 'losses', label: 'L', numeric: true },
-  { key: 'draws', label: 'D', numeric: true },
-  { key: 'games', label: 'Games', numeric: true },
+  { key: 'winRate', label: 'Win%', numeric: true },
 ]
 
-export default function KillteamMatchStats({ killteamId }: { killteamId: string }) {
+/*
+  Win rate as a fraction, for sorting. Draws sit in the denominator, matching the
+  headline rate above and the killteams index, so the three never disagree.
+*/
+function winRateOf(matchup: KillteamMatchup) {
+  return matchup.battles > 0 ? matchup.wins / matchup.battles : 0
+}
+
+function formatWinRate(matchup: KillteamMatchup) {
+  return matchup.battles > 0 ? `${Math.round(winRateOf(matchup) * 100)}%` : '—'
+}
+
+export default function KillteamBattleStats({ killteamId }: { killteamId: string }) {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [sortKey, setSortKey] = useState<SortKey>('games')
+  const [sortKey, setSortKey] = useState<SortKey>('winRate')
   const [ascending, setAscending] = useState(false)
-  const [period, setPeriod] = useState<MatchStatsPeriod>(MATCH_STATS_PERIOD.ALL)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     ;(async () => {
       try {
-        const res = await fetch(`/api/killteams/${killteamId}/matchStats?period=${period}`)
-        if (!res.ok) throw new Error('Failed to load match stats')
+        const res = await fetch(`/api/killteams/${killteamId}/battleStats`)
+        if (!res.ok) throw new Error('Failed to load battle stats')
         const data = await res.json()
         if (!cancelled) setStats(data)
       } catch {
@@ -47,7 +47,7 @@ export default function KillteamMatchStats({ killteamId }: { killteamId: string 
       }
     })()
     return () => { cancelled = true }
-  }, [killteamId, period])
+  }, [killteamId])
 
   const sorted = useMemo(() => {
     if (!stats) return []
@@ -55,7 +55,7 @@ export default function KillteamMatchStats({ killteamId }: { killteamId: string 
     rows.sort((a, b) => {
       const compared = sortKey === 'killteamName'
         ? a.killteamName.localeCompare(b.killteamName)
-        : a[sortKey] - b[sortKey]
+        : winRateOf(a) - winRateOf(b)
       // Equal counts read better alphabetically than in insertion order
       return (ascending ? compared : -compared) || a.killteamName.localeCompare(b.killteamName)
     })
@@ -74,37 +74,14 @@ export default function KillteamMatchStats({ killteamId }: { killteamId: string 
 
   if (!stats && !loading) return null
 
-  const hasResults = !!stats && (stats.games > 0 || stats.mirrorGames > 0)
-  const winRate = stats && stats.games > 0 ? `${Math.round((stats.wins / stats.games) * 100)}%` : '—'
-
-  // Record left, period filter right - the same header shape as the roster
-  // Battles tab. The empty div keeps the filter right-aligned while loading.
-  const header = (
-    <div className="flex items-center justify-between gap-2 mb-4">
-      {hasResults && stats
-        ? <MatchRecord wins={stats.wins} losses={stats.losses} draws={stats.draws} winRate={winRate} />
-        : <div />}
-
-      <label htmlFor="statsPeriod" className="flex items-center gap-3 w-56">
-        Period:
-        <select
-          id="statsPeriod"
-          className="flex-1 min-w-0 bg-card border border-border rounded p-2 text-sm"
-          value={period}
-          onChange={e => setPeriod(e.target.value as MatchStatsPeriod)}
-        >
-          {periods.map(({ value, label }) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-      </label>
-    </div>
-  )
+  // Battles only - a killteam whose every battle was a mirror has nothing to show
+  // in the table below, and no longer has a note explaining the gap
+  const hasResults = !!stats && stats.battles > 0
+  const winRate = stats && stats.battles > 0 ? `${Math.round((stats.wins / stats.battles) * 100)}%` : '—'
 
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto">
-        {header}
         <p className="text-muted text-center py-8">Loading…</p>
       </div>
     )
@@ -113,15 +90,21 @@ export default function KillteamMatchStats({ killteamId }: { killteamId: string 
   if (!stats || !hasResults) {
     return (
       <div className="max-w-3xl mx-auto">
-        {header}
-        <p className="text-muted text-center py-8">No battles have been recorded for this killteam in this period.</p>
+        <p className="text-muted text-center py-8">No battles have been recorded for this killteam yet.</p>
       </div>
     )
   }
 
   return (
     <div className="max-w-3xl mx-auto">
-      {header}
+      {/* Win rate only - the W/L/D breakdown lives in the per-opponent rows below.
+          Styled to match the shared BattleRecord so the two read the same way. */}
+      <div className="mb-4 flex gap-4">
+        <div className="flex flex-col items-center">
+          <span className="text-sm font-bold text-main uppercase tracking-wide leading-none">Win%</span>
+          <span className="text-lg font-bold leading-tight">{winRate}</span>
+        </div>
+      </div>
 
       <table className="w-full text-sm">
         <thead>
@@ -132,7 +115,7 @@ export default function KillteamMatchStats({ killteamId }: { killteamId: string 
                 onClick={() => handleSort(key)}
                 className={clsx(
                   'py-1 cursor-pointer select-none text-main font-bold',
-                  numeric ? 'text-right w-12' : 'text-left',
+                  numeric ? 'text-right w-20' : 'text-left',
                 )}
               >
                 <span className="inline-flex items-center gap-1">
@@ -149,19 +132,14 @@ export default function KillteamMatchStats({ killteamId }: { killteamId: string 
               <td className="py-1">
                 <KillteamLink killteam={{ killteamId: matchup.killteamId, killteamName: matchup.killteamName }} />
               </td>
-              <td className="text-right">{matchup.wins}</td>
-              <td className="text-right">{matchup.losses}</td>
-              <td className="text-right">{matchup.draws}</td>
-              <td className="text-right">{matchup.games}</td>
+              {/* The rate alone hides sample size, so the record is on hover */}
+              <td className="text-right" title={`${matchup.wins}W · ${matchup.losses}L · ${matchup.draws}D`}>
+                {formatWinRate(matchup)}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-
-      <p className="text-sm text-muted mt-4">
-        Confirmed results only.
-        {stats.mirrorGames > 0 && ` ${stats.mirrorGames} mirror ${stats.mirrorGames === 1 ? 'match is' : 'matches are'} excluded.`}
-      </p>
     </div>
   )
 }

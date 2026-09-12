@@ -69,8 +69,10 @@ export default function ToolsPageClient() {
             <div className={'w-full max-w-md mx-auto ' + (tab === 'resources' ? 'block' : 'hidden')}>
               <Resources />
             </div>
+            {/* Wider than the other two: the admin tab carries stat tables and match rows,
+                not the narrow forms that Settings and Resources are built around */}
             {session?.user?.userId === 'vince' && (
-              <div className={'w-full max-w-md mx-auto ' + (tab === 'admin' ? 'block' : 'hidden')}>
+              <div className={'w-full max-w-3xl mx-auto ' + (tab === 'admin' ? 'block' : 'hidden')}>
                 <AdminTools />
               </div>
             )}

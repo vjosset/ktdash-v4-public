@@ -2,7 +2,7 @@
   Confirmed win / loss / draw record. Shared by the roster Battles tab and the
   killteam stats tab so the two always read the same way.
 */
-export default function MatchRecord({
+export default function BattleRecord({
   wins,
   losses,
   draws,

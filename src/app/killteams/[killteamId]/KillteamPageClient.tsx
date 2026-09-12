@@ -4,7 +4,7 @@ import OpCard from '@/components/op/OpCard'
 import AddRosterForm from '@/components/roster/AddRosterForm'
 import RosterEquipment from '@/components/roster/RosterEquipment'
 import RosterPloys from '@/components/roster/RosterPloys'
-import KillteamMatchStats from '@/components/killteam/KillteamMatchStats'
+import KillteamBattleStats from '@/components/killteam/KillteamBattleStats'
 import RosterSpotlightCard from '@/components/roster/RosterSpotlightCard'
 import { badgeClass } from '@/components/shared/Links'
 import Button from '@/components/ui/Button'
@@ -30,7 +30,7 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
   type Tab = typeof validTabs[number]
 
   // Homebrew teams have too few and too fluid a roster pool for the numbers to mean anything
-  const statsEnabled = process.env.NEXT_PUBLIC_ENABLE_MATCHRESULTS === 'true' && !killteam.isHomebrew
+  const statsEnabled = process.env.NEXT_PUBLIC_ENABLE_BATTLES === 'true' && !killteam.isHomebrew
   
   const tabParam = searchParams.get('tab')
   const initialTab = validTabs.includes(tabParam as Tab) ? (tabParam as Tab) : 'operatives'
@@ -342,10 +342,10 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
           })}
         </div>
         
-        {/* Recorded battle results */}
+        {/* Recorded battles */}
         {statsEnabled && (
           <div key="statsTab" className={tab === 'stats' ? 'block' : 'hidden'}>
-            <KillteamMatchStats killteamId={killteam.killteamId} />
+            <KillteamBattleStats killteamId={killteam.killteamId} />
           </div>
         )}
 

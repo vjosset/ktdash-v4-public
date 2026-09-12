@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FiBook, FiList, FiUser, FiUsers } from 'react-icons/fi'
+import { FiBook, FiList, FiTrash2, FiUser, FiUsers } from 'react-icons/fi'
 import { GrTest } from 'react-icons/gr'
 
 export const badgeClass = 'cursor-pointer inline-flex text-foreground items-center gap-1 px-1 py-0.5 font-medium rounded border border-main bg-background hover:bg-card'
@@ -32,6 +32,25 @@ export function UserLink({ userName, newTab }: {userName: string, newTab?: boole
       <FiUser />
       {userName}
     </Link>
+  )
+}
+
+/*
+  A roster that no longer exists, named from a snapshot taken before it was
+  deleted. Deliberately shaped like a RosterLink so it keeps its place in a row
+  of badges, but dashed, muted and non-interactive because there is nowhere to
+  go. The trash icon carries the meaning on touch devices, where the tooltip
+  never shows.
+*/
+export function DeletedRosterBadge({ rosterName }: { rosterName: string }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-1 py-0.5 font-medium rounded border border-dashed border-border bg-background text-muted cursor-default"
+      title={`${rosterName} - this roster has since been deleted`}
+    >
+      <FiTrash2 />
+      {rosterName}
+    </span>
   )
 }
 

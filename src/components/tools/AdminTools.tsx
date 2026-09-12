@@ -1,27 +1,34 @@
 'use client'
 
+import clsx from 'clsx'
 import { format } from 'date-fns'
 import { useCallback, useEffect, useState } from 'react'
 import { FaBolt, FaUsers } from 'react-icons/fa6'
 import { FiCheck, FiLock, FiRotateCw, FiStar } from 'react-icons/fi'
 import { RosterLink, UserLink } from '../shared/Links'
 import { SectionTitle } from '../ui'
-import Button from '../ui/Button'
-import ResetUserPasswordModal from './ResetUserPasswordModal'
+import AdminRecentBattles from './AdminRecentBattles'
+import ResetUserPasswordForm from './ResetUserPasswordForm'
+
+// Same flag the roster Battles tab and killteam stats tab read
+const battlesEnabled = process.env.NEXT_PUBLIC_ENABLE_BATTLES === 'true'
+
+type Tab = 'portraits' | 'battles' | 'tools'
 
 export default function AdminTools() {
   const [stats, setStats] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
-  // Admin modal state
-  const [showResetUserPwd, setShowResetUserPwd] = useState(false)
-  
+  const [tab, setTab] = useState<Tab>('portraits')
+
   const refreshStats = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/adminstats', { cache: 'no-store' })
+      // The server buckets days in this zone, so the table's day boundaries match
+      // the viewer's rather than the server's
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const res = await fetch(`/api/adminstats?tz=${encodeURIComponent(tz)}`, { cache: 'no-store' })
       if (!res.ok) throw new Error('Failed to fetch admin stats')
       const data = await res.json()
       setStats(data)
@@ -36,6 +43,14 @@ export default function AdminTools() {
   useEffect(() => {
     refreshStats()
   }, [refreshStats])
+
+  const tabClasses = (selected: boolean) =>
+    clsx(
+      'px-4 py-2 border-b-2 transition-colors',
+      selected
+        ? 'border-main text-main'
+        : 'border-transparent text-muted hover:text-foreground'
+    )
 
   if (loading) return <p className="text-sm text-muted">Loading stats...</p>
   if (error) return <p className="text-sm text-red-500">{error}</p>
@@ -61,7 +76,7 @@ export default function AdminTools() {
         <div className="flex items-center gap-4 text-main">
           <div className="flex items-center gap-1">
             <FaUsers />
-            <span>{stats.activeUsers30min}</span>
+            <span>{stats.activeVisitors30min}</span>
           </div>
           <div className="flex items-center gap-1">
             <FaBolt />
@@ -91,7 +106,7 @@ export default function AdminTools() {
         <thead>
           <tr className="font-bold">
             <td>Date</td>
-            <td className="text-right">Users (L/A)</td>
+            <td className="text-right">Users</td>
             <td className="text-right">Signups</td>
             <td className="text-right">Views</td>
           </tr>
@@ -100,7 +115,7 @@ export default function AdminTools() {
           {stats.dailyStats.map((dat: any) => (
             <tr key={`dailyStats_${dat.date}`}>
               <td>{dat.date}</td>
-              <td className="text-right">{(dat.uniqueLoggedInUsers ?? 0).toLocaleString()} | {(dat.uniqueAnonymousUsers ?? 0).toLocaleString()}</td>
+              <td className="text-right">{(dat.loggedInVisitors ?? 0).toLocaleString()} + {(dat.anonymousVisitors ?? 0).toLocaleString()}</td>
               <td className="text-right">{dat.signups.toLocaleString()}</td>
               <td className="text-right">{dat.views.toLocaleString()}</td>
             </tr>
@@ -108,44 +123,70 @@ export default function AdminTools() {
         </tbody>
       </table>
       
-      <SectionTitle>Recent Portraits</SectionTitle>
-      {stats.portraitEvents.length === 0 ? (
-        <p className="text-muted">No fully custom rosters uploaded recently.</p>
-      ) : (
-        <div className="space-y-2">
-          {stats.portraitEvents.map((e: any) => (
-            <div key={e.rosterId}>
-              <h6>{format(new Date(e.latestEventAt), 'yyyy-MM-dd HH:mm')}</h6>
-              <div key={e.rosterId} className="flex items-center gap-2 text-sm">
-                {e.isPrivate
-                  ? <FiLock className="text-muted" title="User has set their rosters to private" />
-                  : e.isSpotlight
-                    ? <FiStar className="text-main" />
-                    : e.isComplete
-                      ? <FiCheck />
-                      : <FiStar className="invisible" />
-                }
-                <RosterLink rosterId={e.rosterId} rosterName={e.rosterName} toGallery={true} newTab={true} />
-                {' by '}
-                <UserLink userName={e.userName} newTab={true} />
-                (
-                  {e.hasCustomPortrait ? '1 - ' : '0 - '}
-                  {e.customOps}/{e.totalOps}
-                )
-              </div>
-            </div>
-          ))}
+      {/* Detail tabs. Local state, not the URL - ?tab= already belongs to the
+          page-level Settings/Resources/Admin tabs. */}
+      <div className="mt-4 overflow-x-auto">
+        <div className="flex space-x-2 border-b border-border">
+          <button className={tabClasses(tab === 'portraits')} onClick={() => setTab('portraits')}>
+            Portraits
+          </button>
+          {battlesEnabled && (
+            <button className={tabClasses(tab === 'battles')} onClick={() => setTab('battles')}>
+              Battles
+            </button>
+          )}
+          <button className={tabClasses(tab === 'tools')} onClick={() => setTab('tools')}>
+            Admin Tools
+          </button>
         </div>
-      )}
-
-      <hr/>
-      
-      <div className="p-3 space-y-3">
-        <Button onClick={() => setShowResetUserPwd(true)}>Reset User Password</Button>
       </div>
-      {showResetUserPwd && (
-        <ResetUserPasswordModal onClose={() => setShowResetUserPwd(false)} />
-      )}
+
+      <div className="pt-3">
+        {/* Portraits */}
+        <div className={tab === 'portraits' ? 'block' : 'hidden'}>
+          {stats.portraitEvents.length === 0 ? (
+            <p className="text-muted">No fully custom rosters uploaded recently.</p>
+          ) : (
+            <div className="space-y-2">
+              {stats.portraitEvents.map((e: any) => (
+                <div key={e.rosterId}>
+                  <h6>{format(new Date(e.latestEventAt), 'yyyy-MM-dd HH:mm')}</h6>
+                  <div key={e.rosterId} className="flex items-center gap-2 text-sm">
+                    {e.isPrivate
+                      ? <FiLock className="text-muted" title="User has set their rosters to private" />
+                      : e.isSpotlight
+                        ? <FiStar className="text-main" />
+                        : e.isComplete
+                          ? <FiCheck />
+                          : <FiStar className="invisible" />
+                    }
+                    <RosterLink rosterId={e.rosterId} rosterName={e.rosterName} toGallery={true} newTab={true} />
+                    {' by '}
+                    <UserLink userName={e.userName} newTab={true} />
+                    (
+                    {e.hasCustomPortrait ? '1 - ' : '0 - '}
+                    {e.customOps}/{e.totalOps}
+                    )
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Battles */}
+        {battlesEnabled && (
+          <div className={tab === 'battles' ? 'block' : 'hidden'}>
+            <AdminRecentBattles battles={stats.recentBattles ?? []} />
+          </div>
+        )}
+
+        {/* Admin Tools */}
+        <div className={tab === 'tools' ? 'block' : 'hidden'}>
+          <SectionTitle>Reset User Password</SectionTitle>
+          <ResetUserPasswordForm />
+        </div>
+      </div>
     </div>
   )
 }

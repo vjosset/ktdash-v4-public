@@ -3,7 +3,7 @@
 import AddOpForm from '@/components/op/AddOpForm'
 import OpCard from '@/components/op/OpCard'
 import EditRosterForm from '@/components/roster/EditRosterForm'
-import MatchResultsTab from '@/components/roster/MatchResultsTab'
+import BattlesTab from '@/components/roster/BattlesTab'
 import RosterCardMenu from '@/components/roster/RosterCardMenu'
 import RosterEquipment from '@/components/roster/RosterEquipment'
 import RosterOps from '@/components/roster/RosterOps'
@@ -47,8 +47,8 @@ export default function RosterPageClient({
   const validTabs = ['operatives', 'equipment', 'ploys', 'ops', 'gallery', 'battles', 'opponent'] as const
   type Tab = typeof validTabs[number]
 
-  // Match results are still in progress - see notes/match-result-spec.md
-  const battlesEnabled = process.env.NEXT_PUBLIC_ENABLE_MATCHRESULTS === 'true'
+  // Battles are still in progress - see notes/match-result-spec.md
+  const battlesEnabled = process.env.NEXT_PUBLIC_ENABLE_BATTLES === 'true'
 
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -397,7 +397,7 @@ export default function RosterPageClient({
         {/* Foreground content */}
         <div className="relative z-10 flex flex-col items-center justify-end text-center h-full pt-28 md:pt-20 pb-6 px-4 print:pt-1 print:pb-1">
           <div className="cursor-pointer flex items-center gap-2">
-            <PageTitle onClick={isOwner && handleEditRosterClick}>
+            <PageTitle onClick={isOwner ? handleEditRosterClick : undefined}>
               {roster.rosterName} {isOwner && (<sup><FaPencil className="inline text-xs" /></sup>)}
             </PageTitle>
           </div>
@@ -719,7 +719,7 @@ export default function RosterPageClient({
           {/* Battles */}
           {battlesEnabled && (
             <div className={tab === 'battles' ? 'block' : 'hidden'}>
-              <MatchResultsTab roster={roster} isOwner={isOwner} isActive={tab === 'battles'} />
+              <BattlesTab roster={roster} isOwner={isOwner} isActive={tab === 'battles'} />
             </div>
           )}
 
@@ -739,12 +739,24 @@ export default function RosterPageClient({
             {session?.user?.userId == 'vince' && (
               roster.user?.isPrivate ? (
                 <div className="flex items-center gap-2 text-muted cursor-not-allowed" title="User has set their rosters to private">
-                  <Checkbox checked={false} onChange={() => {}} disabled />
+                  <Checkbox checked={false} disabled readOnly aria-hidden="true" />
                   <FiStar /> Spotlight Off (user is private)
                 </div>
               ) : (
-                <div className={`flex items-center gap-2 cursor-pointer ${roster.isSpotlight ? 'text-main' : 'text-muted'}`} onClick={() => toggleSpotlight(roster.rosterId)}>
-                  <Checkbox checked={roster.isSpotlight} onChange={() => {}} /* Handled by parent container*/ />
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleSpotlight(roster.rosterId)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      toggleSpotlight(roster.rosterId)
+                    }
+                  }}
+                  aria-pressed={roster.isSpotlight}
+                  className={`flex items-center gap-2 cursor-pointer ${roster.isSpotlight ? 'text-main' : 'text-muted'}`}
+                >
+                  <Checkbox checked={roster.isSpotlight} readOnly tabIndex={-1} aria-hidden="true" /* Handled by parent container*/ />
                   <FiStar /> Spotlight {roster.isSpotlight ? 'On' : 'Off'}
                 </div>
               )
@@ -934,6 +946,8 @@ export default function RosterPageClient({
                         id={`deploy_${op.opId}`}
                         checked={op.isDeployed}
                         readOnly // avoid double toggle
+                        tabIndex={-1}
+                        aria-hidden="true"
                       />
                       <div>
                         <h6 className="font-bold">
