@@ -1,7 +1,7 @@
 'use client'
 
-import { RosterLink, UserLink } from '@/components/shared/Links'
 import BattleRecord from '@/components/shared/BattleRecord'
+import { RosterLink, UserLink } from '@/components/shared/Links'
 import { Button, Input, Label, Modal, SectionTitle } from '@/components/ui'
 import { parseRosterId, toLocalDateTime } from '@/lib/utils/utils'
 import { BattleOutcome, BattlePlain, BattleRosterInfo, RosterIdentity, RosterPlain } from '@/types'
@@ -486,7 +486,7 @@ function RecordBattleModal({
 
         <p className="text-sm text-muted">
           Only one of you records the battle. Your opponent confirms it from the Battles tab on
-          their own roster, and it counts toward both records once they do.
+          their own roster, and it counts toward both rosters once they do.
         </p>
       </div>
     </Modal>
