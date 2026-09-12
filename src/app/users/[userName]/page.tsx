@@ -2,7 +2,7 @@ import PageTitle from '@/components/ui/PageTitle'
 import { GAME } from '@/lib/config/game_config'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
 import { getRosterPortraitUrl } from '@/lib/utils/imageUrls'
-import { UserService } from '@/services'
+import { BattleService, UserService } from '@/services'
 import { getAuthSession } from '@/src/lib/auth'
 import { notFound } from 'next/navigation'
 import UserPageClient from './UserPageClient'
@@ -57,6 +57,13 @@ export default async function UserPage({ params }: { params: Promise<{ userName:
 
   const isOwner = session?.user?.userId === user.userId
 
+  // Viewer-aware, so this must never be cached across viewers. Reading the
+  // session above already makes the route dynamic, which overrides revalidate.
+  const battlesEnabled = process.env.NEXT_PUBLIC_ENABLE_BATTLES === 'true'
+  const battles = battlesEnabled
+    ? (await BattleService.getBattlesForUser(user.userId, session?.user?.userId)).map(b => b.toPlain())
+    : []
+
   return (
     <div className="px-1 py-8 max-w-7xl mx-auto">
       <div className="text-center mb-8">
@@ -69,6 +76,7 @@ export default async function UserPage({ params }: { params: Promise<{ userName:
         user={user.toPlain()}
         isOwner={isOwner}
         userName={user.userName}
+        battles={battles}
       />
     </div>
   )

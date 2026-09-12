@@ -118,6 +118,24 @@ export class BattleRepository extends BaseRepository {
   }
 
   /*
+    Every battle any of a user's rosters fought, in either slot. Matched on the
+    live roster relation, not the userName snapshot: a snapshot follows the name
+    rather than the person, so a renamed account would lose its record and a
+    reused name would inherit someone else's. The cost is that a battle whose
+    roster has since been deleted drops off the user's list.
+  */
+  async getBattlesForUser(userId: string, includeUnconfirmed: boolean): Promise<BattleRow[]> {
+    return await this.prisma.battle.findMany({
+      where: {
+        OR: [{ rosterA: { userId } }, { rosterB: { userId } }],
+        ...(includeUnconfirmed ? {} : { rosterBConfirmed: true }),
+      },
+      include: battleInclude,
+      orderBy: { battleDate: 'desc' },
+    })
+  }
+
+  /*
     Newest battles site-wide, for the admin view. Unconfirmed rows are included
     on purpose: a report stuck awaiting confirmation is exactly the thing an
     admin wants to see, and there is no roster whose owner's privacy to respect

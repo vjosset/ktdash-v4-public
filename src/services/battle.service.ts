@@ -44,6 +44,17 @@ export class BattleService {
     return rows.map(toBattle)
   }
 
+  /*
+    Viewer-aware, like getBattlesForRoster: the user themselves also sees battles
+    still awaiting confirmation. Everyone else, signed in or not, sees confirmed
+    battles only.
+  */
+  static async getBattlesForUser(userId: string, viewerUserId?: string | null): Promise<Battle[]> {
+    const isSelf = !!viewerUserId && viewerUserId === userId
+    const rows = await this.repository.getBattlesForUser(userId, isSelf)
+    return rows.map(toBattle)
+  }
+
   static async createBattle(params: {
     rosterA: RosterIdentity
     rosterB: RosterIdentity

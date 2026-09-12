@@ -2,9 +2,10 @@
 
 import KillteamCard from '@/components/killteam/KillteamCard'
 import { Button } from '@/components/ui'
+import UserBattlesTab from '@/components/user/UserBattlesTab'
 import AddRosterForm from '@/src/components/roster/AddRosterForm'
 import RosterCard from '@/src/components/roster/RosterCard'
-import { UserPlain } from '@/types'
+import { BattlePlain, UserPlain } from '@/types'
 import clsx from 'clsx'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -14,9 +15,12 @@ interface UserPageClientProps {
   user: UserPlain
   isOwner: boolean
   userName: string
+  // Already filtered for the viewer: empty when the flag is off, and confirmed
+  // battles only unless the viewer is this user
+  battles: BattlePlain[]
 }
 
-export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
+export default function UserPageClient({ user, isOwner, battles }: UserPageClientProps) {
   const [rosters, setRosters] = useState(user.rosters)
   const router = useRouter()
 
@@ -30,7 +34,7 @@ export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
     setRosters((currentRosters) => currentRosters?.filter((roster) => roster.rosterId !== rosterId))
   }
 
-  const _validTabs = ['rosters', 'killteams'] as const
+  const _validTabs = ['rosters', 'killteams', 'battles'] as const
   type Tab = (typeof _validTabs)[number]
 
   const [tab, setTab] = useState<Tab>('rosters')
@@ -38,6 +42,10 @@ export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
   const isHomebrewTeam = (killteam: any) => ((killteam as any).isHomebrew ?? killteam.factionId === 'HBR')
   const userHomebrewKillteams = (user.killteams || []).filter(isHomebrewTeam)
   const hasHomebrew = userHomebrewKillteams.length > 0
+  const hasBattles = battles.length > 0
+  // The tab bar used to exist only for homebrew. With no homebrew and no
+  // battles, every condition below reduces to exactly what it was before.
+  const showTabs = hasHomebrew || hasBattles
   const canCreateHomebrew = isOwner
   const homebrewLimitReached = userHomebrewKillteams.length >= 50
 
@@ -125,31 +133,41 @@ export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
 
   return (
     <div>
-      {!hasHomebrew && isOwner && (
+      {!showTabs && isOwner && (
         <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
           <AddRosterForm />
           {renderHomebrewButton()}
         </div>
       )}
 
-      {hasHomebrew && (
+      {showTabs && (
         <div className="overflow-x-auto px-2">
           {/* Tabs */}
           <div className="flex justify-center space-x-2 border-b border-border mb-4 min-w-max">
             <button className={tabClasses(tab === 'rosters')} onClick={() => handleTabChange('rosters')}>
               Rosters
             </button>
-            <button className={tabClasses(tab === 'killteams')} onClick={() => handleTabChange('killteams')}>
-              Homebrew
-            </button>
+            {hasBattles && (
+              <button className={tabClasses(tab === 'battles')} onClick={() => handleTabChange('battles')}>
+                Battles
+              </button>
+            )}
+            {hasHomebrew && (
+              <button className={tabClasses(tab === 'killteams')} onClick={() => handleTabChange('killteams')}>
+                Homebrew
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      <div key="rostersTab" className={!hasHomebrew || tab === 'rosters' ? 'block' : 'hidden'}>
-        {hasHomebrew && isOwner && (
-          <div className="flex justify-center mb-4">
+      <div key="rostersTab" className={!showTabs || tab === 'rosters' ? 'block' : 'hidden'}>
+        {/* With tabs but no Homebrew tab (battles only), the homebrew button has
+            nowhere else to live, so it joins Add Roster here rather than vanish */}
+        {showTabs && isOwner && (
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
             <AddRosterForm />
+            {!hasHomebrew && renderHomebrewButton()}
           </div>
         )}
         <div className="gap-1 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -182,6 +200,12 @@ export default function UserPageClient({ user, isOwner }: UserPageClientProps) {
               <KillteamCard key={killteam.killteamId} killteam={killteam} />
             ))}
           </div>
+        </div>
+      )}
+
+      {hasBattles && (
+        <div key="battlesTab" className={tab === 'battles' ? 'block' : 'hidden'}>
+          <UserBattlesTab battles={battles} userId={user.userId} />
         </div>
       )}
     </div>
