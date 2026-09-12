@@ -2,7 +2,7 @@
   {
     "date": "2026-09-12",
     "title": "Recording Battles",
-    "description": "You can now record battle results against other KTDash rosters. On your roster page, you will see a new \"Battles\" tab where you can record the result of a game. Once the other player confirms the result on their own roster page, it will be recorded against both rosters and update your roster and global killteam stats."
+    "description": "You can now record battle results against other KTDash rosters. On your roster page, you will see a new \"Battles\" tab where you can record the result of a game. Once the other player confirms the result on their own roster page, it will be recorded against both rosters and update your roster and global [killteam stats](https://ktdash.app/killteams?tab=stats)."
   },
   {
     "date": "2026-08-29",
