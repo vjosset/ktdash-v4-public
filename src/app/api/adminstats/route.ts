@@ -1,14 +1,30 @@
 import { getAuthSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { resolveTimeZone, toZonedIsoDate } from '@/lib/utils/utils'
+import { Prisma } from '@prisma/client'
+import { resolveTimeZone, toZonedIsoDate, zonedDayStartUtc } from '@/lib/utils/utils'
 import { BattleService } from '@/services'
 import { BattlePlain } from '@/types'
 import { NextResponse } from 'next/server'
 
 const RECENT_BATTLE_LIMIT = 30
 
+// COUNT() comes back from a raw MySQL query as BigInt, never a number
+type DailyEventRow = {
+  day: string
+  views: bigint
+  uniqueVisitors: bigint
+  loggedInVisitors: bigint
+}
+
+type DailySignupRow = {
+  day: string
+  signups: bigint
+}
+
 // Get the stats
 export async function GET(req: Request) {
+  console.debug('Starting admin stats', (new Date()))
+
   const session = await getAuthSession()
   if (!session?.user || session.user.userId != 'vince') return new NextResponse('Unauthorized', { status: 401 })
 
@@ -19,14 +35,15 @@ export async function GET(req: Request) {
 
   const days = getLastNDates(9, timeZone)
 
-  // Query a UTC window a day wider on each side than the local days reported: a
-  // zone can sit up to 14 hours off UTC, so a local day can begin on the previous
-  // UTC day and end on the next. Rows outside the reported range land in buckets
-  // that nothing reads.
-  const startDate = new Date(`${days[days.length - 1]}T00:00:00Z`)
-  startDate.setUTCDate(startDate.getUTCDate() - 1)
-  const endDate = new Date(`${days[0]}T00:00:00Z`)
-  endDate.setUTCDate(endDate.getUTCDate() + 2)
+  // The exact UTC instants each reported local day begins at, newest first. A
+  // zone can sit up to 14 hours off UTC, so these are not UTC midnights - the
+  // database buckets rows by comparing against them.
+  const dayStarts = days.map(d => zonedDayStartUtc(d, timeZone))
+  const startDate = dayStarts[dayStarts.length - 1]
+
+  const dayAfterNewest = new Date(`${days[0]}T00:00:00Z`)
+  dayAfterNewest.setUTCDate(dayAfterNewest.getUTCDate() + 1)
+  const endDate = zonedDayStartUtc(dayAfterNewest.toISOString().split('T')[0], timeZone)
 
   const stats: {
     datestamp: Date
@@ -52,45 +69,63 @@ export async function GET(req: Request) {
   
   // Get the stats
   // Totals: Users, rosters, ops
-  const [users, rosters, ops, recentSignups] = await Promise.all([
+  console.debug('Get totals', (new Date()))
+  const [users, rosters, ops] = await Promise.all([
     prisma.user.count(),
     prisma.roster.count(),
-    prisma.op.count(),
-    prisma.user.findMany({
-      where: {
-        createdAt: {
-          gte: startDate,
-          lt: endDate
-        }
-      },
-      select: {
-        createdAt: true
-      }
-    })
+    prisma.op.count()
   ])
 
   stats.totals = { users, rosters, ops }
-  
+
   const cutoff30m = new Date(Date.now() - 30 * 60 * 1000)
   const excludedIps = ['127.0.0.1', '::1', '76.98.82.81', '73.188.188.13', '73.165.66.83', '68.80.166.102']
   const excludedUserIds = ['vince']
 
-  const [pageViews, recentActiveUsers, events30m] = await Promise.all([
-    prisma.webEvent.findMany({
-      where: {
-        datestamp: {
-          gte: startDate,
-          lt: endDate
-        },
-        userIp: {
-          notIn: excludedIps
-        },
-        userId: {
-          notIn: excludedUserIds
-        }
-      },
-      select: { datestamp: true, userId: true, userIp: true, visitorId: true }
-    }),
+  /*
+    Which reported day a timestamp falls on, decided by the database against the
+    zone boundaries above. Days run newest first and the queries only ever see
+    rows inside the window, so the first branch that matches is the right one.
+  */
+  const dayBucket = (column: Prisma.Sql) => Prisma.sql`CASE ${Prisma.join(
+    dayStarts.map((start, i) => Prisma.sql`WHEN ${column} >= ${start} THEN ${days[i]}`),
+    ' '
+  )} END`
+
+  /*
+    Counting happens in SQL. Pulling every event in the window back to bucket it
+    here meant thousands of rows over the wire and seconds of formatting per
+    request; the database groups the same rows in one pass and returns nine.
+    userId NOT IN also drops rows with a null userId, which is what the Prisma
+    notIn filter this replaced did.
+  */
+  console.debug('Get daily stats, active', (new Date()))
+  const [dailyEvents, dailySignups, recentActiveUsers, events30m] = await Promise.all([
+    prisma.$queryRaw<DailyEventRow[]>`
+      SELECT
+        ${dayBucket(Prisma.raw('e.datestamp'))} AS day,
+        COUNT(*) AS views,
+        COUNT(DISTINCT NULLIF(COALESCE(e.visitorId, e.userIp), '')) AS uniqueVisitors,
+        COUNT(DISTINCT CASE
+          WHEN e.userId IS NOT NULL AND e.userId <> '[anon]'
+          THEN NULLIF(COALESCE(e.visitorId, e.userIp), '')
+        END) AS loggedInVisitors
+      FROM \`WebEvent\` e
+      WHERE e.datestamp >= ${startDate}
+        AND e.datestamp < ${endDate}
+        AND e.userIp NOT IN (${Prisma.join(excludedIps)})
+        AND e.userId NOT IN (${Prisma.join(excludedUserIds)})
+      GROUP BY day
+    `,
+    prisma.$queryRaw<DailySignupRow[]>`
+      SELECT
+        ${dayBucket(Prisma.raw('u.createdAt'))} AS day,
+        COUNT(*) AS signups
+      FROM \`User\` u
+      WHERE u.createdAt >= ${startDate}
+        AND u.createdAt < ${endDate}
+      GROUP BY day
+    `,
     prisma.webEvent.groupBy({
       by: ['visitorId', 'userIp'], // userIp is only here as the fallback key for rows with no visitorId
       where: {
@@ -109,7 +144,7 @@ export async function GET(req: Request) {
       }
     })
   ])
-  
+
   // One visitor can appear on several rows (multiple IPs), so collapse them onto
   // the visitor key before counting
   stats.activeVisitors30min = new Set(
@@ -119,57 +154,24 @@ export async function GET(req: Request) {
   ).size
   stats.events30min = events30m
 
-  // Group into { 'YYYY-MM-DD': count }
-  const pageViewsPerDay: Record<string, number> = {}
-  // Distinct visitors (browser/device), keyed on visitorId. Rows written before
-  // visitorId shipped fall back to userIp so history isn't collapsed into one bucket.
-  const distinctVisitorsPerDay = new Map<string, {
-    all: Set<string>
-    loggedIn: Set<string>
-  }>()
-
-  for (const e of pageViews) {
-    const date = toZonedIsoDate(e.datestamp, timeZone)
-    pageViewsPerDay[date] = (pageViewsPerDay[date] || 0) + 1
-
-    const visitorKey = e.visitorId ?? e.userIp
-    if (!visitorKey) continue
-
-    if (!distinctVisitorsPerDay.has(date)) {
-      distinctVisitorsPerDay.set(date, {
-        all: new Set(),
-        loggedIn: new Set()
-      })
-    }
-
-    const bucket = distinctVisitorsPerDay.get(date)!
-    bucket.all.add(visitorKey)
-
-    // A visitor who browses anonymously and then logs in emits rows under the same
-    // visitorId with two different userIds. Count them once, on the logged-in side,
-    // and derive anonymous by subtraction below rather than counting '[anon]' rows.
-    if (e.userId && e.userId !== '[anon]') {
-      bucket.loggedIn.add(visitorKey)
-    }
-  }
-  
-  const signupsPerDay: Record<string, number> = {}
-
-  for (const u of recentSignups) {
-    const date = toZonedIsoDate(u.createdAt, timeZone)
-    signupsPerDay[date] = (signupsPerDay[date] || 0) + 1
-  }
+  const eventsByDay = new Map(dailyEvents.map(r => [r.day, r]))
+  const signupsByDay = new Map(dailySignups.map(r => [r.day, Number(r.signups)]))
 
   // Merge into array for frontend
+  console.debug('Build daily stats', (new Date()))
   stats.dailyStats = days.map(date => {
-    const visitorSets = distinctVisitorsPerDay.get(date)
-    const uniqueVisitors = visitorSets?.all.size ?? 0
-    const loggedInVisitors = visitorSets?.loggedIn.size ?? 0
+    const row = eventsByDay.get(date)
+
+    // A visitor who browses anonymously and then logs in emits rows under the same
+    // visitorId with two different userIds. The query counts them once, on the
+    // logged-in side, so anonymous comes out by subtraction rather than off '[anon]' rows.
+    const uniqueVisitors = Number(row?.uniqueVisitors ?? 0)
+    const loggedInVisitors = Number(row?.loggedInVisitors ?? 0)
 
     return {
       date,
-      views: pageViewsPerDay[date] || 0,
-      signups: signupsPerDay[date] || 0,
+      views: Number(row?.views ?? 0),
+      signups: signupsByDay.get(date) ?? 0,
       uniqueVisitors,
       loggedInVisitors,
       anonymousVisitors: uniqueVisitors - loggedInVisitors
@@ -221,26 +223,26 @@ export async function GET(req: Request) {
   })
 
   const portraitCompleteRosters = portraitRosters
-  .map(r => {
-    const totalOps = r.ops.length
-    const customOps = r.ops.filter(op => op.hasCustomPortrait).length
-    const isComplete = totalOps > 0 && totalOps === customOps && r.hasCustomPortrait
+    .map(r => {
+      const totalOps = r.ops.length
+      const customOps = r.ops.filter(op => op.hasCustomPortrait).length
+      const isComplete = totalOps > 0 && totalOps === customOps && r.hasCustomPortrait
 
-    return {
-      rosterId: r.rosterId,
-      rosterName: r.rosterName,
-      isSpotlight: r.isSpotlight,
-      userName: r.user?.userName ?? 'Unknown',
-      isPrivate: r.user?.isPrivate ?? false,
-      killteamName: r.killteam?.killteamName ?? 'Unknown',
-      hasCustomPortrait: r.hasCustomPortrait,
-      totalOps,
-      customOps,
-      isComplete,
-      latestEventAt: recentRosterActivity.get(r.rosterId) ?? null
-    }
-  })
-  .sort((a, b) => b.latestEventAt!.getTime() - a.latestEventAt!.getTime())
+      return {
+        rosterId: r.rosterId,
+        rosterName: r.rosterName,
+        isSpotlight: r.isSpotlight,
+        userName: r.user?.userName ?? 'Unknown',
+        isPrivate: r.user?.isPrivate ?? false,
+        killteamName: r.killteam?.killteamName ?? 'Unknown',
+        hasCustomPortrait: r.hasCustomPortrait,
+        totalOps,
+        customOps,
+        isComplete,
+        latestEventAt: recentRosterActivity.get(r.rosterId) ?? null
+      }
+    })
+    .sort((a, b) => b.latestEventAt!.getTime() - a.latestEventAt!.getTime())
 
   stats.portraitEvents = portraitCompleteRosters
 
@@ -251,6 +253,7 @@ export async function GET(req: Request) {
     stats.recentBattles = recentBattles.map(b => b.toPlain())
   }
 
+  console.debug('Build response', (new Date()))
   return NextResponse.json(stats)
 }
 
