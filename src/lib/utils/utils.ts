@@ -21,6 +21,43 @@ export function toZonedIsoDate(date: Date, timeZone: string): string {
 }
 
 /*
+  The UTC instant at which a calendar day begins in a given zone. Two passes
+  because the offset that applies is the one in force at the answer, not the one
+  at the naive guess - a single pass lands an hour out on the days either side of
+  a DST switch.
+*/
+export function zonedDayStartUtc(isoDate: string, timeZone: string): Date {
+  const naive = Date.parse(`${isoDate}T00:00:00Z`)
+  const firstPass = naive - zoneOffsetMs(new Date(naive), timeZone)
+
+  return new Date(naive - zoneOffsetMs(new Date(firstPass), timeZone))
+}
+
+/*
+  How far ahead of UTC a zone sits at a given instant, in milliseconds. Reads the
+  wall clock in the zone and treats it as if it were UTC - the gap between that
+  and the real instant is the offset.
+*/
+function zoneOffsetMs(instant: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(instant)
+
+  const get = (type: string) => Number(parts.find(p => p.type === type)!.value)
+  // Midnight comes back as hour 24 rather than 0 under hour12: false in some ICU builds
+  const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'), get('second'))
+
+  return asUtc - instant.getTime()
+}
+
+/*
   Validate a client-supplied IANA zone, falling back to UTC. Intl throwing a
   RangeError is the only reliable way to test one, and a bad value is a client
   bug rather than a reason to fail the whole request.
