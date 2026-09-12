@@ -1,9 +1,9 @@
 import { getAuthSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
 import { resolveTimeZone, toZonedIsoDate, zonedDayStartUtc } from '@/lib/utils/utils'
 import { BattleService } from '@/services'
 import { BattlePlain } from '@/types'
+import { Prisma } from '@prisma/client'
 import { NextResponse } from 'next/server'
 
 const RECENT_BATTLE_LIMIT = 30
@@ -23,8 +23,6 @@ type DailySignupRow = {
 
 // Get the stats
 export async function GET(req: Request) {
-  console.debug('Starting admin stats', (new Date()))
-
   const session = await getAuthSession()
   if (!session?.user || session.user.userId != 'vince') return new NextResponse('Unauthorized', { status: 401 })
 
@@ -69,7 +67,6 @@ export async function GET(req: Request) {
   
   // Get the stats
   // Totals: Users, rosters, ops
-  console.debug('Get totals', (new Date()))
   const [users, rosters, ops] = await Promise.all([
     prisma.user.count(),
     prisma.roster.count(),
@@ -99,7 +96,6 @@ export async function GET(req: Request) {
     userId NOT IN also drops rows with a null userId, which is what the Prisma
     notIn filter this replaced did.
   */
-  console.debug('Get daily stats, active', (new Date()))
   const [dailyEvents, dailySignups, recentActiveUsers, events30m] = await Promise.all([
     prisma.$queryRaw<DailyEventRow[]>`
       SELECT
@@ -158,7 +154,6 @@ export async function GET(req: Request) {
   const signupsByDay = new Map(dailySignups.map(r => [r.day, Number(r.signups)]))
 
   // Merge into array for frontend
-  console.debug('Build daily stats', (new Date()))
   stats.dailyStats = days.map(date => {
     const row = eventsByDay.get(date)
 
@@ -253,7 +248,6 @@ export async function GET(req: Request) {
     stats.recentBattles = recentBattles.map(b => b.toPlain())
   }
 
-  console.debug('Build response', (new Date()))
   return NextResponse.json(stats)
 }
 
