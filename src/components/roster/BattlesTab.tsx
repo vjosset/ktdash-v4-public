@@ -3,6 +3,7 @@
 import BattleRecord from '@/components/shared/BattleRecord'
 import { RosterLink, UserLink } from '@/components/shared/Links'
 import { Button, Input, Label, Modal, SectionTitle } from '@/components/ui'
+import { getOpponentRosterId } from '@/lib/opponentRoster'
 import { parseRosterId, toLocalDateTime } from '@/lib/utils/utils'
 import { BattleOutcome, BattlePlain, BattleRosterInfo, RosterIdentity, RosterPlain } from '@/types'
 import clsx from 'clsx'
@@ -284,6 +285,34 @@ export default function BattlesTab({
   )
 }
 
+type OpponentLookup =
+  | { ok: true; identity: RosterIdentity }
+  | { ok: false; error: string }
+
+/*
+  Resolve a roster ID to the opponent it names, applying the same two checks the
+  server applies on create. Shared by the typed lookup and the Opponent-tab
+  prefill, so a carried-over opponent is validated exactly like a typed one.
+*/
+async function lookupOpponent(rosterId: string, myRosterId: string, myUserId: string): Promise<OpponentLookup> {
+  try {
+    const res = await fetch(`/api/rosters/${rosterId}/identity`)
+    if (!res.ok) throw new Error('Not found')
+    const found: RosterIdentity = await res.json()
+
+    if (found.rosterId === myRosterId) {
+      return { ok: false, error: 'That is this roster. Enter your opponent’s roster.' }
+    }
+    if (found.userId === myUserId) {
+      return { ok: false, error: 'That roster is also yours. A battle needs two different players.' }
+    }
+
+    return { ok: true, identity: found }
+  } catch {
+    return { ok: false, error: 'Roster not found. Check the ID and try again.' }
+  }
+}
+
 /*
   Report a battle. Outcome buttons are phrased in the first person so the
   reporter never has to think about slots; they map to slot values on submit.
@@ -304,6 +333,43 @@ function RecordBattleModal({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
+  // Whether the opponent below was carried over rather than typed, which is the
+  // only thing the two paths do differently - it earns a caption
+  const [carriedOver, setCarriedOver] = useState(false)
+
+  /*
+    The Opponent tab already holds whoever you are playing, set during the game
+    while reading their datacards, so it is almost always the battle you are
+    about to record. Seed the form with it - resolved and captioned, so a stale
+    one can be spotted and changed rather than reported by accident.
+  */
+  useEffect(() => {
+    const storedId = getOpponentRosterId(roster.rosterId)
+    if (!storedId) return
+
+    let cancelled = false
+    setLookingUp(true)
+
+    lookupOpponent(storedId, roster.rosterId, roster.userId).then(result => {
+      if (cancelled) return
+      setLookingUp(false)
+      // A stored opponent that no longer resolves is not the user's problem
+      // here: the form just opens empty, exactly as it did before
+      if (!result.ok) return
+      setOpponent(result.identity)
+      setCarriedOver(true)
+    })
+
+    return () => { cancelled = true }
+  }, [roster.rosterId, roster.userId])
+
+  // Shared by the pencil and the carried-over caption's "Change it" link
+  const clearOpponent = () => {
+    setOpponent(null)
+    setOutcome(null)
+    setDuplicateWarning(null)
+    setCarriedOver(false)
+  }
 
   const handleLookup = async () => {
     const opponentRosterId = parseRosterId(input)
@@ -311,26 +377,16 @@ function RecordBattleModal({
 
     setLookingUp(true)
     setError(null)
-    try {
-      const res = await fetch(`/api/rosters/${opponentRosterId}/identity`)
-      if (!res.ok) throw new Error('Not found')
-      const found: RosterIdentity = await res.json()
 
-      if (found.rosterId === roster.rosterId) {
-        setError('That is this roster. Enter your opponent’s roster.')
-        return
-      }
-      if (found.userId === roster.userId) {
-        setError('That roster is also yours. A battle needs two different players.')
-        return
-      }
+    const result = await lookupOpponent(opponentRosterId, roster.rosterId, roster.userId)
+    setLookingUp(false)
 
-      setOpponent(found)
-    } catch {
-      setError('Roster not found. Check the ID and try again.')
-    } finally {
-      setLookingUp(false)
+    if (!result.ok) {
+      setError(result.error)
+      return
     }
+
+    setOpponent(result.identity)
   }
 
   const handleSubmit = async (acknowledgeDuplicate: boolean) => {
@@ -431,11 +487,7 @@ function RecordBattleModal({
                 className="text-muted hover:text-main transition-colors"
                 title="Change opponent"
                 aria-label="Change opponent"
-                onClick={() => {
-                  setOpponent(null)
-                  setOutcome(null)
-                  setDuplicateWarning(null)
-                }}
+                onClick={clearOpponent}
               >
                 <FiEdit2 size={14} />
               </button>
@@ -458,6 +510,16 @@ function RecordBattleModal({
             </div>
           )}
         </div>
+
+        {opponent && carriedOver && (
+          <p className="text-xs text-muted text-right">
+            From your Opponent tab.{' '}
+            <button className="underline hover:text-main transition-colors" onClick={clearOpponent}>
+              Change it
+            </button>{' '}
+            if this isn’t who you played.
+          </p>
+        )}
 
         {/* Outcome, phrased from the reporter's point of view */}
         {opponent && (

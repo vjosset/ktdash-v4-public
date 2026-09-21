@@ -6,7 +6,7 @@ import clsx from 'clsx'
 import { useMemo, useState } from 'react'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
 
-type SortKey = 'killteamName' | 'winRate' | 'rosterCount'
+type SortKey = 'killteamName' | 'winRate' | 'record' | 'rosterCount'
 
 // Formatted with a fixed locale rather than the viewer's: this renders on the
 // server too, and a locale-dependent number would mismatch on hydration
@@ -43,8 +43,12 @@ export default function KillteamStatsTable({
 
   const columns: { key: SortKey; label: string; numeric: boolean }[] = [
     { key: 'killteamName', label: 'Killteam', numeric: false },
-    ...(battlesEnabled ? [{ key: 'winRate' as const, label: 'Win%', numeric: true }] : []),
-    { key: 'rosterCount', label: 'Rosters', numeric: true },
+    ...(battlesEnabled
+      ? [
+        { key: 'record' as const, label: 'W · L · D', numeric: true },
+        { key: 'winRate' as const, label: 'Win%', numeric: true },
+      ]
+      : []),
   ]
 
   const sorted = useMemo(() => {
@@ -69,16 +73,19 @@ export default function KillteamStatsTable({
         return (ascending ? rateA - rateB : rateB - rateA) || a.killteamName.localeCompare(b.killteamName)
       }
 
+      // The record sorts by sample size - total battles, not wins
       const compared = sortKey === 'killteamName'
         ? a.killteamName.localeCompare(b.killteamName)
-        : (a.rosterCount ?? 0) - (b.rosterCount ?? 0)
+        : sortKey === 'record'
+          ? (recordsByKillteam.get(a.killteamId)?.battles ?? 0) - (recordsByKillteam.get(b.killteamId)?.battles ?? 0)
+          : (a.rosterCount ?? 0) - (b.rosterCount ?? 0)
 
       // Equal counts read better alphabetically than in insertion order
       return (ascending ? compared : -compared) || a.killteamName.localeCompare(b.killteamName)
     })
 
     return rows
-  }, [killteams, sortKey, ascending, rateOf])
+  }, [killteams, sortKey, ascending, rateOf, recordsByKillteam])
 
   const handleSort = (key: SortKey) => {
     if (key === sortKey) {
@@ -127,17 +134,15 @@ export default function KillteamStatsTable({
                   <KillteamLink killteam={killteam} />
                 </td>
                 {battlesEnabled && (
-                  // The rate alone hides sample size, so the record is on hover
-                  <td
-                    className="px-2 py-1 text-right"
-                    title={record ? `${record.wins}W · ${record.losses}L · ${record.draws}D` : undefined}
-                  >
-                    {rate === null ? '—' : `${Math.round(rate * 100)}%`}
-                  </td>
+                  <>
+                    <td className="px-2 py-1 text-right whitespace-nowrap">
+                      {record && record.battles > 0 ? `${record.wins} · ${record.losses} · ${record.draws}` : '—'}
+                    </td>
+                    <td className="px-2 py-1 text-right">
+                      {rate === null ? '—' : `${Math.round(rate * 100)}%`}
+                    </td>
+                  </>
                 )}
-                <td className="px-2 py-1 text-right">
-                  {numberFormatter.format(killteam.rosterCount ?? 0)}
-                </td>
               </tr>
             )
           })}

@@ -1,15 +1,16 @@
 'use client'
 
 import { KillteamLink } from '@/components/shared/Links'
-import { KillteamBattleStats as Stats, KillteamMatchup } from '@/types'
+import { KillteamMatchup, KillteamBattleStats as Stats } from '@/types'
 import clsx from 'clsx'
 import { useEffect, useMemo, useState } from 'react'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
 
-type SortKey = 'killteamName' | 'winRate'
+type SortKey = 'killteamName' | 'record' | 'winRate'
 
 const columns: { key: SortKey; label: string; numeric: boolean }[] = [
   { key: 'killteamName', label: 'Opponent', numeric: false },
+  { key: 'record', label: 'W · L · D', numeric: true },
   { key: 'winRate', label: 'Win%', numeric: true },
 ]
 
@@ -53,9 +54,12 @@ export default function KillteamBattleStats({ killteamId }: { killteamId: string
     if (!stats) return []
     const rows = [...stats.matchups]
     rows.sort((a, b) => {
+      // The record sorts by sample size - total battles, not wins
       const compared = sortKey === 'killteamName'
         ? a.killteamName.localeCompare(b.killteamName)
-        : winRateOf(a) - winRateOf(b)
+        : sortKey === 'record'
+          ? a.battles - b.battles
+          : winRateOf(a) - winRateOf(b)
       // Equal counts read better alphabetically than in insertion order
       return (ascending ? compared : -compared) || a.killteamName.localeCompare(b.killteamName)
     })
@@ -132,8 +136,10 @@ export default function KillteamBattleStats({ killteamId }: { killteamId: string
               <td className="py-1">
                 <KillteamLink killteam={{ killteamId: matchup.killteamId, killteamName: matchup.killteamName }} />
               </td>
-              {/* The rate alone hides sample size, so the record is on hover */}
-              <td className="text-right" title={`${matchup.wins}W · ${matchup.losses}L · ${matchup.draws}D`}>
+              <td className="text-right whitespace-nowrap">
+                {`${matchup.wins} · ${matchup.losses} · ${matchup.draws}`}
+              </td>
+              <td className="text-right">
                 {formatWinRate(matchup)}
               </td>
             </tr>

@@ -2,16 +2,12 @@
 
 import OpCard from '@/components/op/OpCard'
 import { KillteamLink, UserLink } from '@/components/shared/Links'
+import { clearOpponentRosterId, getOpponentRosterId, setOpponentRosterId } from '@/lib/opponentRoster'
 import { parseRosterId } from '@/lib/utils/utils'
 import { WeaponRule } from '@/lib/utils/weaponRules'
 import { RosterPlain } from '@/types'
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import { FiEdit2 } from 'react-icons/fi'
-const isBrowser = () => typeof window !== 'undefined'
-const opponentKey = (id: string) => `opponent_${id}`
-const getOpponentRosterId = (id: string) => isBrowser() ? localStorage.getItem(opponentKey(id)) : null
-const setOpponentRosterId = (id: string, opId: string) => isBrowser() && localStorage.setItem(opponentKey(id), opId)
-const clearOpponentRosterId = (id: string) => isBrowser() && localStorage.removeItem(opponentKey(id))
 
 interface OpponentTabProps {
   myRosterId: string
