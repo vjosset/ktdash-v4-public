@@ -74,7 +74,7 @@ export default function UserBattlesTab({ battles, userId }: { battles: BattlePla
 
       <SectionTitle>Battle History</SectionTitle>
 
-      <ul className="list-none pl-0 divide-y divide-border border-y border-border">
+      <ul className="list-none pl-0">
         {battles.map(battle => {
           const { isReporter, mine, opponent, outcome } = perspectiveFor(battle, userId)
 

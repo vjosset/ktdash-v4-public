@@ -170,7 +170,7 @@ export default function BattlesTab({
           {isOwner && ' Record one after your next battle.'}
         </p>
       ) : (
-        <ul className="list-none pl-0 divide-y divide-border border-y border-border">
+        <ul className="list-none pl-0">
           {battles.map(battle => {
             const { isReporter, opponent, outcome } = perspectiveFor(battle, roster.rosterId)
             const awaitingMe = !battle.isConfirmed && !isReporter
