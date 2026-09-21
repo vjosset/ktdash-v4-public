@@ -311,7 +311,7 @@ INSERT INTO WeaponRule (code, rulename, description) VALUES ('RENDING', 'Rending
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('RNG_', 'Range _', 'Range limit of the weapon.');
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('SAT', 'Saturate', 'The defender cannot retain Cover saves.');
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('SATURATE', 'Saturate', 'The defender cannot retain Cover saves.');
-INSERT INTO WeaponRule (code, rulename, description) VALUES ('SEV', 'Severe', 'If you do not retain any critical successes, you can change one of your normal successes to a critical success. The Devastating and Piercing Crits weapon rules still take effect, but Punishing and Rending don’t.');
+INSERT INTO WeaponRule (code, rulename, description) VALUES ('SEV', 'Severe', 'If you do not retain any critical successes, you can change one of your normal successes to a critical success. The Devastating and Piercing Crits weapon rules still take effect, but Punishing and Rending don''t.');
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('SHOCK', 'Shock', 'The first time you strike with a critical success in each sequence, also discard one of your opponent''s unresolved normal successes (or a critical success if there are none).');
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('SIL', 'Silent', 'Can Shoot this weapon while on a Conceal order.');
 INSERT INTO WeaponRule (code, rulename, description) VALUES ('SILENT', 'Silent', 'Can Shoot this weapon while on a Conceal order.');
@@ -385,7 +385,7 @@ UPDATE Killteam SET composition =
       - Triskele; power weapon
   - STRIKING SCORPION EXARCH with one of the following options:
     - Shuriken pistol; biting blade
-      - Shuriken pistol; scorpion’s claw & chainsword
+      - Shuriken pistol; scorpion''s claw & chainsword
       - Twin shuriken pistols; twin chainswords  
 - 7 BLADES OF KHAINE operatives selected from the following list:
   - DIRE AVENGER WARRIOR
@@ -585,7 +585,7 @@ Other than ASPIRANT operatives, your kill team can only include each operative o
 UPDATE Killteam SET composition =
 'Note that other than MUTOID VERMIN, you do not select your operatives from a list.  
 
-This kill team’s operatives are specified.  
+This kill team''s operatives are specified.  
 
 A GELLERPOX INFECTED killteam is composed of every GELLERPOX INFECTED operative in the following list:
 
@@ -859,7 +859,7 @@ Other than TROOPER operatives, your kill team can only include each operative on
 /***********************************/
 UPDATE Killteam SET composition =
 'Note that you do not select your operatives from a list.
-This kill team’s operatives are specified.
+This kill team''s operatives are specified.
 
 An ELUCIDIAN STARSTRIDERS killteam is composed of every ELUCIDIAN STARSTRIDER operative in the following list:
 
@@ -950,7 +950,7 @@ Other than ARMSMAN operatives, your kill team can only include each operative on
 
 Your kill team can only include a GHEISTSKULL operative if it also includes a VOID-JAMMER operative, and it can only include a C.A.T. UNIT operative if it also includes a SURVEYOR operative.  
 
-These operatives count as half a selection each, meaning you can select both of them and it’s treated as one selection in total.' WHERE killteamid = 'IMP-INB';
+These operatives count as half a selection each, meaning you can select both of them and it''s treated as one selection in total.' WHERE killteamid = 'IMP-INB';
 
 /***********************************/
 /*  Inquisitorial Agents  */
@@ -975,7 +975,7 @@ UPDATE Killteam SET composition =
     - Plasma cannon; servo-claw
 - 5 INQUISITORIAL AGENT operatives selected from the list above, or REQUISITIONED operatives from one group in the Inquisitorial Requisition faction rule (you cannot select REQUISITIONED operatives from different groups).
   
-Your kill team can only include each operative on this list once, unless you’re not including any REQUISITIONED operatives, in which case you can include up to two GUN SERVITOR operatives, but each one must have different options.  
+Your kill team can only include each operative on this list once, unless you''re not including any REQUISITIONED operatives, in which case you can include up to two GUN SERVITOR operatives, but each one must have different options.  
 
 Your kill team (including any REQUISITIONED operatives) cannot include more than one weapon with the Piercing 2 weapon rule, and cannot include more than three weapons with the Piercing X (excluding Piercing Crits X) weapon rule combined.' WHERE killteamid = 'IMP-INQ';
 
@@ -1007,7 +1007,7 @@ Other than TROOPER operatives, your kill team can only include each operative on
 
 *You cannot select more than four of these operatives combined.  
 
-Some KASRKIN rules refer to a ‘hot-shot weapon’. This is a ranged weapon that includes ‘hot-shot’ in its name, e.g. hot-shot lasgun, all profiles of a hot-shot marksman rifle, etc.' WHERE killteamid = 'IMP-KAS';
+Some KASRKIN rules refer to a ‘hot-shot weapon''. This is a ranged weapon that includes ‘hot-shot'' in its name, e.g. hot-shot lasgun, all profiles of a hot-shot marksman rifle, etc.' WHERE killteamid = 'IMP-KAS';
 
 /***********************************/
 /*  Novitiates  */
@@ -1280,7 +1280,7 @@ Other than HOUND and WARRIOR operatives, your kill team can only include each op
 UPDATE Killteam SET composition =
 'A PATHFINDERS KillTeam is composed of:
 
-- 1 PATHFINDER SHAS’UI operative
+- 1 PATHFINDER SHAS''UI operative
 - 11 PATHFINDER operatives selected from the following list:
   - ASSAULT GRENADIER
   - BLOODED
@@ -1288,7 +1288,7 @@ UPDATE Killteam SET composition =
   - DRONE CONTROLLER
   - MARKSMAN
   - MEDICAL TECHNICIAN
-  - SHAS’LA
+  - SHAS''LA
   - TRANSPECTRAL INTERFERENCE
   - MB3 RECON DRONE (counts as two selections)
   - MV31 PULSE ACCELERATOR DRONE
@@ -1300,11 +1300,11 @@ UPDATE Killteam SET composition =
     - Ion rifle; gun butt
     - Rail rifle; gun butt
         
-Other than SHAS’LA and WEAPONS EXPERT operatives, your kill team can only include each operative on this list once.  
+Other than SHAS''LA and WEAPONS EXPERT operatives, your kill team can only include each operative on this list once.  
 
 Your kill team can only include up to two WEAPONS EXPERT operatives.  
 
-Some PATHFINDER rules refer to a ‘pulse weapon’. The following weapons are pulse weapons: burst cannon, pulse carbine, suppressed pulse carbine, twin pulse carbine.' WHERE killteamid = 'TAU-PF';
+Some PATHFINDER rules refer to a ‘pulse weapon''. The following weapons are pulse weapons: burst cannon, pulse carbine, suppressed pulse carbine, twin pulse carbine.' WHERE killteamid = 'TAU-PF';
 
 /***********************************/
 /*  Vespid Stingwings  */
