@@ -2,8 +2,8 @@
 
 import AddOpForm from '@/components/op/AddOpForm'
 import OpCard from '@/components/op/OpCard'
-import EditRosterForm from '@/components/roster/EditRosterForm'
 import BattlesTab from '@/components/roster/BattlesTab'
+import EditRosterForm from '@/components/roster/EditRosterForm'
 import RosterCardMenu from '@/components/roster/RosterCardMenu'
 import RosterEquipment from '@/components/roster/RosterEquipment'
 import RosterOps from '@/components/roster/RosterOps'
@@ -569,7 +569,7 @@ export default function RosterPageClient({
         {/* Tabs  */}
         {(isOwner || carouselItems.length > 0 || battlesEnabled) && (
           <div className="overflow-x-auto px-2 noprint">
-            <div className="flex justify-center space-x-2 border-b border-border mb-4">
+            <div className="flex justify-center space-x-2 border-b border-border mb-4 min-w-max">
               <button className={tabClasses(tab === 'operatives')} onClick={() => handleTabChange('operatives')}>
                 Operatives
               </button>
@@ -585,7 +585,7 @@ export default function RosterPageClient({
               }
               {isOwner && roster && 
                 <button className={tabClasses(tab === 'ops')} onClick={() => handleTabChange('ops')}>
-                  Ops
+                  TacOps
                 </button>
               }
               {roster && carouselItems.length > 0 &&
