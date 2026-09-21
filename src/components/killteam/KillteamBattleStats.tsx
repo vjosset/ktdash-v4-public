@@ -54,11 +54,12 @@ export default function KillteamBattleStats({ killteamId }: { killteamId: string
     if (!stats) return []
     const rows = [...stats.matchups]
     rows.sort((a, b) => {
-      // The record sorts by sample size - total battles, not wins
+      // The record sorts by sample size - total battles - with wins breaking
+      // ties in the same direction
       const compared = sortKey === 'killteamName'
         ? a.killteamName.localeCompare(b.killteamName)
         : sortKey === 'record'
-          ? a.battles - b.battles
+          ? (a.battles - b.battles) || (a.wins - b.wins)
           : winRateOf(a) - winRateOf(b)
       // Equal counts read better alphabetically than in insertion order
       return (ascending ? compared : -compared) || a.killteamName.localeCompare(b.killteamName)

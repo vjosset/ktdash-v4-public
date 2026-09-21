@@ -73,11 +73,14 @@ export default function KillteamStatsTable({
         return (ascending ? rateA - rateB : rateB - rateA) || a.killteamName.localeCompare(b.killteamName)
       }
 
-      // The record sorts by sample size - total battles, not wins
+      // The record sorts by sample size - total battles - with wins breaking
+      // ties in the same direction
+      const recordA = recordsByKillteam.get(a.killteamId)
+      const recordB = recordsByKillteam.get(b.killteamId)
       const compared = sortKey === 'killteamName'
         ? a.killteamName.localeCompare(b.killteamName)
         : sortKey === 'record'
-          ? (recordsByKillteam.get(a.killteamId)?.battles ?? 0) - (recordsByKillteam.get(b.killteamId)?.battles ?? 0)
+          ? ((recordA?.battles ?? 0) - (recordB?.battles ?? 0)) || ((recordA?.wins ?? 0) - (recordB?.wins ?? 0))
           : (a.rosterCount ?? 0) - (b.rosterCount ?? 0)
 
       // Equal counts read better alphabetically than in insertion order
