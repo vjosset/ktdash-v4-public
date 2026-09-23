@@ -1,10 +1,10 @@
 'use client'
 
+import KillteamBattleStats from '@/components/killteam/KillteamBattleStats'
 import OpCard from '@/components/op/OpCard'
 import AddRosterForm from '@/components/roster/AddRosterForm'
 import RosterEquipment from '@/components/roster/RosterEquipment'
 import RosterPloys from '@/components/roster/RosterPloys'
-import KillteamBattleStats from '@/components/killteam/KillteamBattleStats'
 import RosterSpotlightCard from '@/components/roster/RosterSpotlightCard'
 import { badgeClass } from '@/components/shared/Links'
 import Button from '@/components/ui/Button'
@@ -270,7 +270,7 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
           </button>
           {(killteam?.spotlightRosters?.length ?? 0) > 0 &&
             <button className={tabClasses(tab === 'rosters')} onClick={() => handleTabChange('rosters')}>
-              Rosters
+              Spotlight
             </button>
           }
           {statsEnabled &&
