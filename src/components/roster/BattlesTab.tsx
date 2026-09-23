@@ -471,7 +471,7 @@ function RecordBattleModal({
       <div className="space-y-3">
         {/* My roster - fixed */}
         <div className="flex items-center justify-between gap-2">
-          <Label>Your Roster ID</Label>
+          <Label>My Roster ID</Label>
           <span className="font-mono uppercase select-all">{roster.rosterId}</span>
         </div>
 
