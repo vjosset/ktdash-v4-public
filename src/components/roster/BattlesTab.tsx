@@ -547,7 +547,7 @@ function RecordBattleModal({
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         <p className="text-sm text-muted">
-          Only one of you records the battle. Your opponent confirms it from the Battles tab on
+          Only one player records the battle. The other player confirms it from the Battles tab on
           their own roster, and it counts toward both rosters once they do.
         </p>
       </div>
