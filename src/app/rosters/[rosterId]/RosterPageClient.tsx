@@ -585,7 +585,7 @@ export default function RosterPageClient({
               }
               {isOwner && roster && 
                 <button className={tabClasses(tab === 'ops')} onClick={() => handleTabChange('ops')}>
-                  TacOps
+                  Ops
                 </button>
               }
               {roster && carouselItems.length > 0 &&
