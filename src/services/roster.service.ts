@@ -215,7 +215,7 @@ export class RosterService {
       await OpService.updateOp(op.opId, { currWOUNDS: newCurrWOUNDS, isActivated: false})
     }))
 
-    // Return the update roster
+    // Return the updated roster
     return await this.getRoster(rosterId)
   }
 
