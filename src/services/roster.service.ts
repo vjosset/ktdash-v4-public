@@ -274,7 +274,7 @@ export class RosterService {
     // Create all the ops
     for(const op of newRoster.ops) {
       const opRow = {
-        opId: op.opId,
+        opId: op.opId, // This gets overwritten by createOp()
         rosterId: createdRoster.rosterId,
         opName: op.opName,
         opTypeId: op.opTypeId,

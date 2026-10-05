@@ -609,8 +609,8 @@ export default function RosterPageClient({
         
         {/* Tab Content */}
         <div className="leading-relaxed px-1">
-          {/* Operatives */}
-          <div className={tab === 'operatives' ? 'block' : 'hidden'} style={{ pageBreakBefore: 'always'}}>
+          {/* Operatives - always printed regardless of the current tab; other tabs are excluded from print */}
+          <div className={tab === 'operatives' ? 'block' : 'hidden print:block'} style={{ pageBreakBefore: 'always'}}>
             <h3 className="font-title text-main text-center printonly mb-2">Operatives</h3>
             {isOwner && (
               <div className="flex justify-between items-center mb-2 noprint">
@@ -702,30 +702,30 @@ export default function RosterPageClient({
           </div>
 
           {/* Equipment */}
-          <div className={tab === 'equipment' ? 'block' : 'hidden'}>
+          <div className={tab === 'equipment' ? 'block print:hidden' : 'hidden'}>
             <RosterEquipment killteam={roster.killteam} roster={roster} onRosterUpdate={(updated) => setRoster(updated)} />
           </div>
 
           {/* Ploys */}
-          <div className={tab === 'ploys' ? 'block' : 'hidden'}>
+          <div className={tab === 'ploys' ? 'block print:hidden' : 'hidden'}>
             <RosterPloys roster={roster} killteam={roster.killteam} isOwner={isOwner} onRosterUpdate={(updated) => setRoster(updated)} />
           </div>
 
           {/* Ops */}
-          <div className={tab === 'ops' ? 'block' : 'hidden'}>
+          <div className={tab === 'ops' ? 'block print:hidden' : 'hidden'}>
             <RosterOps roster={roster} onRosterUpdate={(updated) => setRoster(updated)} />
           </div>
 
           {/* Battles */}
           {battlesEnabled && (
-            <div className={tab === 'battles' ? 'block' : 'hidden'}>
+            <div className={tab === 'battles' ? 'block print:hidden' : 'hidden'}>
               <BattlesTab roster={roster} isOwner={isOwner} isActive={tab === 'battles'} />
             </div>
           )}
 
           {/* Opponent — always mounted when owner so state survives tab switches */}
           {isOwner && (
-            <div className={tab !== 'opponent' ? 'hidden' : undefined}>
+            <div className={tab !== 'opponent' ? 'hidden' : 'print:hidden'}>
               <OpponentTab
                 myRosterId={roster.rosterId}
                 allWeaponRules={allWeaponRules ?? []}
@@ -735,7 +735,7 @@ export default function RosterPageClient({
           )}
 
           {/* Gallery */}
-          <div className={tab === 'gallery' ? 'block' : 'hidden'}>
+          <div className={tab === 'gallery' ? 'block print:hidden' : 'hidden'}>
             {session?.user?.userId == 'vince' && (
               roster.user?.isPrivate ? (
                 <div className="flex items-center gap-2 text-muted cursor-not-allowed" title="User has set their rosters to private">
