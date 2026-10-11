@@ -3,6 +3,9 @@
   "version": "4.2026.2.7",
   "private": true,
   "license": "LicenseRef-ktdash-Proprietary",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "seed": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/seed.ts",
     "dev": "PORT=7000 next dev",
@@ -42,7 +45,7 @@
     "@next/eslint-plugin-next": "^15.3.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/formidable": "^3.4.5",
-    "@types/node": "22.13.14",
+    "@types/node": "^24.19.2",
     "@types/react": "19.0.12",
     "@types/react-dom": "^19.1.1",
     "@typescript-eslint/eslint-plugin": "^8.33.1",
@@ -56,5 +59,11 @@
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "allowScripts": {
+    "@prisma/client@6.5.0": true,
+    "@prisma/engines@6.5.0": true,
+    "esbuild@0.25.9": true,
+    "prisma@6.5.0": true
   }
 }
