@@ -285,6 +285,7 @@ export class RosterService {
         isActivated: false,
         opOrder: op.opOrder,
         hasCustomPortrait: false,
+        description: op.description
       }
       await OpService.createOp(opRow)
     }
