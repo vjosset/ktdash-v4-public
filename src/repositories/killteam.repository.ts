@@ -45,7 +45,7 @@ export class KillteamRepository extends BaseRepository {
         },
         ploys: {
           orderBy: [
-            { ployType: 'asc' },
+            { ployType: 'desc' }, // 'S' (Strategy) before 'F' (Firefight)
             { seq: 'asc' }
           ]
         },

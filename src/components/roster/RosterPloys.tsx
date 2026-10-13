@@ -15,7 +15,8 @@ type RosterPloysProps = {
 export default function RosterPloys({ killteam, roster, isOwner, onRosterUpdate }: RosterPloysProps) {
   const rosterPloyIds = roster?.ployIds?.split(',').filter(Boolean) ?? [];
 
-  const sortedPloys = killteam?.ploys?.sort((a, b) => a.ployType.localeCompare(b.ployType))
+  // Strategy ('S') before Firefight ('F'); stable sort keeps seq order within each type
+  const sortedPloys = killteam?.ploys ? [...killteam.ploys].sort((a, b) => b.ployType.localeCompare(a.ployType)) : undefined
 
   const togglePloy = async (ployId: string) => {
     if (!roster) return;
