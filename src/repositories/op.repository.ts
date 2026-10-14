@@ -50,7 +50,8 @@ export class OpRepository extends BaseRepository {
         opOrder: 'concealed',
         wepIds: data.wepIds ?? '',
         optionIds: data.optionIds ?? '',
-        rosterId: data.rosterId ?? ''
+        rosterId: data.rosterId ?? '',
+        description: data.description ?? ''
       }
     })
   }
