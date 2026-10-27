@@ -4,7 +4,7 @@
   "private": true,
   "license": "LicenseRef-ktdash-Proprietary",
   "engines": {
-    "node": ">=24"
+    "node": ">=24.22.1"
   },
   "scripts": {
     "seed": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/seed.ts",
