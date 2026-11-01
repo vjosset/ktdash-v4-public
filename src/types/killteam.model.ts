@@ -1,4 +1,4 @@
-import { OpType, OpTypePlain, Roster, RosterPlain, User, UserPlain } from '.'
+import { OpType, OpTypePlain, Roster, RosterPlain, SpotlightRosterPlain, User, UserPlain } from '.'
 import { Equipment, EquipmentPlain } from './equipment.model'
 import { Ploy, PloyPlain } from './ploy.model'
 
@@ -27,7 +27,7 @@ export type KillteamPlain = {
   rosterCount?: number
   opTypes: OpTypePlain[]
   ploys: PloyPlain[]
-  spotlightRosters: RosterPlain[]
+  spotlightRosters: SpotlightRosterPlain[]
   equipments: EquipmentPlain[]
   voteSummary?: KillteamVoteInfo
   userVote?: KillteamVoteChoice | null
@@ -48,7 +48,7 @@ export class Killteam {
   rosterCount: number
   opTypes: OpType[]
   ploys: Ploy[]
-  spotlightRosters: Roster[]
+  spotlightRosters: SpotlightRosterPlain[]
   equipments: Equipment[]
   voteSummary?: KillteamVoteInfo
   userVote?: KillteamVoteChoice | null
@@ -68,7 +68,7 @@ export class Killteam {
     rosterCount?: number
     opTypes: OpType[]
     ploys: Ploy[]
-    spotlightRosters: Roster[]
+    spotlightRosters: SpotlightRosterPlain[]
     equipments: Equipment[]
     voteSummary?: KillteamVoteInfo
     userVote?: KillteamVoteChoice | null
@@ -86,7 +86,7 @@ export class Killteam {
     this.user = data.user ? (data.user instanceof User ? data.user : new User(data.user)) : null
     this.opTypes = data.opTypes?.map(opType => opType instanceof OpType ? opType : new OpType(opType))
     this.ploys = data.ploys?.map(ploy => ploy instanceof Ploy ? ploy : new Ploy(ploy))
-    this.spotlightRosters = data.spotlightRosters?.map(roster => roster instanceof Roster ? roster : new Roster(roster))
+    this.spotlightRosters = data.spotlightRosters
     this.equipments = data.equipments?.map(eq => eq instanceof Equipment ? eq : new Equipment(eq))
     const derivedCount =
       typeof (data as any)._count?.rosters === 'number'
@@ -122,7 +122,7 @@ export class Killteam {
       rosterCount: this.rosterCount,
       opTypes: this.opTypes?.map((opType) => opType.toPlain()),
       ploys: this.ploys?.map((ploy) => ploy.toPlain()),
-      spotlightRosters: this.spotlightRosters?.map((roster) => roster.toPlain()),
+      spotlightRosters: this.spotlightRosters,
       equipments: this.equipments?.map((eq) => eq.toPlain()),
     }
     if (typeof this.voteSummary !== 'undefined') {

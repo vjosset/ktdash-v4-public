@@ -50,14 +50,19 @@ export class KillteamRepository extends BaseRepository {
           ]
         },
         // Only include spotlight rosters in the list; default is provided separately
+        // Popular teams have hundreds of these, so only load what a spotlight card shows
         rosters: {
           where: {
             isSpotlight: true,
             user: { isPrivate: false },
           },
-          include: {
-            user: true,
-            killteam: true
+          select: {
+            rosterId: true,
+            killteamId: true,
+            rosterName: true,
+            hasCustomPortrait: true,
+            portraitUpdatedAt: true,
+            user: { select: { userName: true } },
           }
         },
       }

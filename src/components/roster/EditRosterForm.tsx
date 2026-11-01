@@ -2,15 +2,13 @@
 
 import PortraitCropper, { getCroppedBlob } from '@/components/shared/PortraitCropper'
 import { Button, Input, Label, Modal } from '@/components/ui'
+import MarkdownEditor from '@/components/ui/MarkdownEditor'
 import { getRosterPortraitUrl, toEpochMs } from '@/lib/utils/imageUrls'
 import { RosterPlain } from '@/types'
 import { Area } from 'react-easy-crop'
-import { commands } from '@uiw/react-md-editor'
-import dynamic from 'next/dynamic'
 import { forwardRef, useImperativeHandle, useState } from 'react'
 import { toast } from 'sonner'
 
-const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false })
 const MAX_PORTRAIT_BYTES = 10 * 1024 * 1024 // 10MB
 
 export interface EditRosterFormRef {
@@ -159,22 +157,11 @@ const EditRosterForm = forwardRef(function EditRosterForm(
           <div>
             <Label htmlFor="rosterDescription">Description</Label>
             <div className="custom-md-editor">
-              <MDEditor
+              <MarkdownEditor
                 id="rosterDescription"
                 value={description}
                 onChange={(val) => setDescription(val || '')}
-                preview="edit"
-                data-color-mode="dark"
                 style={{ minHeight: 300 }}
-                commands={[
-                  commands.bold,
-                  commands.italic,
-                  commands.hr,
-                  commands.divider,
-                  commands.quote,
-                  commands.unorderedListCommand,
-                  commands.orderedListCommand
-                ]}
               />
             </div>
           </div>

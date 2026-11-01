@@ -1,13 +1,15 @@
 'use client'
 
 import { getOpPortraitUrl, getRosterPortraitUrl, toEpochMs } from '@/lib/utils/imageUrls'
-import { RosterPlain } from '@/types'
+import { KillteamPlain, RosterPlain, SpotlightRosterPlain } from '@/types'
 import Link from 'next/link'
 import { useState } from 'react'
 import { KillteamLink, UserLink } from '../shared/Links'
 
 type RosterSpotlightCardProps = {
-  roster: RosterPlain
+  roster: SpotlightRosterPlain & Pick<RosterPlain, 'ops'> & {
+    killteam?: Pick<KillteamPlain, 'killteamId' | 'killteamName' | 'isHomebrew' | 'userId'> | null
+  }
   showUserLink?: boolean
   showKillteamLink?: boolean
 }

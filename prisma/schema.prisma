@@ -171,6 +171,8 @@ model Roster {
   // Battles this roster took part in, in either slot
   battlesAsA         Battle[]      @relation("BattleRosterA")
   battlesAsB         Battle[]      @relation("BattleRosterB")
+
+  @@index([isSpotlight, killteamId], map: "IX_Roster_Spotlight")
 }
 
 model Op {

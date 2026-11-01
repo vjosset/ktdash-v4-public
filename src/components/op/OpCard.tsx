@@ -8,13 +8,13 @@ import { WeaponRule } from '@/lib/utils/weaponRules'
 import WeaponTable from '@/src/components/shared/WeaponTable'
 import { KillteamPlain, OpPlain, OpTypePlain, RosterPlain } from '@/types'
 import { Menu, MenuButton } from '@headlessui/react'
-import MDEditor, { commands } from '@uiw/react-md-editor'
 import { useEffect, useState } from 'react'
 import { FaHeartPulse } from 'react-icons/fa6'
 import { FiEdit, FiMoreVertical, FiPause } from 'react-icons/fi'
 import { GiDeathSkull } from 'react-icons/gi'
 import { Button, Modal } from '../ui'
 import Markdown from '../ui/Markdown'
+import MarkdownEditor from '../ui/MarkdownEditor'
 import OpCardMenu from './OpCardMenu'
 import OpEditorModal from './OpEditorModal'
 
@@ -335,21 +335,10 @@ export default function OpCard({
             {/* Edit mode (owner only) */}
             {isEditingNotes && isOwner && (
               <div className="space-y-2">
-                <MDEditor
+                <MarkdownEditor
                   value={draftNotes}
-                  preview="edit"
-                  data-color-mode="dark"
                   onChange={(val) => setDraftNotes(val || '')}
                   style={{ minHeight: 300 }}
-                  commands={[
-                    commands.bold,
-                    commands.italic,
-                    commands.hr,
-                    commands.divider,
-                    commands.quote,
-                    commands.unorderedListCommand,
-                    commands.orderedListCommand
-                  ]}
                 />
                 <div className="flex items-center gap-2">
                   <Button onClick={saveNotes} disabled={savingNotes} className="flex items-center gap-1">

@@ -2,16 +2,21 @@ import { getAuthSession } from '@/lib/auth'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
 import { getOpPortraitUrl, getRosterPortraitUrl, toEpochMs } from '@/lib/utils/imageUrls'
 import { RosterService } from '@/services'
+import { WeaponRuleService } from '@/services/weaponRule.service'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
 import RosterPageClient from './RosterPageClient'
+
+// generateMetadata and the page share one load per request
+const getRoster = cache((rosterId: string) => RosterService.getRoster(rosterId))
 
 export async function generateMetadata({ params, searchParams }:
   { params: Promise<{ rosterId: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }
 ): Promise<Metadata> {
   const { rosterId } = await params
   const sp = await searchParams
-  const roster = await RosterService.getRoster(rosterId)
+  const roster = await getRoster(rosterId)
 
   if (!roster) {
     return {
@@ -48,9 +53,15 @@ export async function generateMetadata({ params, searchParams }:
   })
 }
 
-export default async function RosterPage({ params }: { params: Promise<{ rosterId: string }> }) {
+export default async function RosterPage({ params, searchParams }:
+  { params: Promise<{ rosterId: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }
+) {
   const { rosterId } = await params
-  const roster = (await RosterService.getRoster(rosterId))
+  const { tab } = await searchParams
+  const [roster, allWeaponRules] = await Promise.all([
+    getRoster(rosterId),
+    WeaponRuleService.getAllWeaponRules(),
+  ])
 
   if (!roster) notFound()
 
@@ -63,7 +74,12 @@ export default async function RosterPage({ params }: { params: Promise<{ rosterI
 
   return (
     <div className="mx-auto">
-      <RosterPageClient initialRoster={roster.toPlain()} isOwner={isOwner} />
+      <RosterPageClient
+        initialRoster={roster.toPlain()}
+        isOwner={isOwner}
+        allWeaponRules={allWeaponRules.map((rule) => rule.toPlain())}
+        initialTab={typeof tab === 'string' ? tab : undefined}
+      />
     </div>
   )
 }

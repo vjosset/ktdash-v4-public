@@ -14,6 +14,19 @@ export type RosterIdentity = {
   killteamName: string
 }
 
+/*
+  What a killteam carries for each of its spotlight rosters. Popular teams have
+  hundreds of them, so this stays down to what a spotlight card shows.
+*/
+export type SpotlightRosterPlain = {
+  rosterId: string
+  killteamId: string
+  rosterName: string
+  hasCustomPortrait: boolean
+  portraitUpdatedAt?: Date
+  user?: { userName?: string | null } | null
+}
+
 export type RosterPlain = {
   rosterId: string
   userId: string

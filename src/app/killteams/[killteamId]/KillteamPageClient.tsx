@@ -16,13 +16,20 @@ import { KillteamPlain } from '@/types'
 import { WeaponRulePlain } from '@/types/weaponRule.model'
 import clsx from 'clsx'
 import { useSession } from 'next-auth/react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { Fragment, useCallback, useEffect, useState } from 'react'
 import { FiInfo, FiPrinter, FiThumbsDown, FiThumbsUp } from 'react-icons/fi'
 import { toast } from 'sonner'
 
-export default function KillteamPageClient({ killteam }: { killteam: KillteamPlain }) {
-  const router = useRouter()
+export default function KillteamPageClient({
+  killteam,
+  allWeaponRules,
+  initialTab,
+}: {
+  killteam: KillteamPlain
+  allWeaponRules: WeaponRulePlain[]
+  initialTab?: string
+}) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -32,11 +39,12 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
   // Homebrew teams have too few and too fluid a roster pool for the numbers to mean anything
   const statsEnabled = process.env.NEXT_PUBLIC_ENABLE_BATTLES === 'true' && !killteam.isHomebrew
   
-  const tabParam = searchParams.get('tab')
-  const initialTab = validTabs.includes(tabParam as Tab) ? (tabParam as Tab) : 'operatives'
+  const [tab, setTab] = useState<Tab>(validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'operatives')
 
-  const [tab, setTab] = useState<Tab>(initialTab)
-  const [allWeaponRules, setSpecials] = useState<WeaponRulePlain[] | null>(null)
+  // Spotlight cards are only rendered once that tab has been opened
+  const [spotlightOpened, setSpotlightOpened] = useState(false)
+  if (tab === 'rosters' && !spotlightOpened) setSpotlightOpened(true)
+
   const teamTacOps = TacOps.filter((op) => killteam?.archetypes?.includes(op.archetype))
   const { abilities: killteamAbilities, options: killteamOptions } = getKillteamRepeatedAbilitiesAndOptions(killteam)
   const { data: session } = useSession()
@@ -45,13 +53,6 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
     typeof killteam.userVote === 'undefined' ? null : killteam.userVote
   )
   const [voteSubmitting, setVoteSubmitting] = useState(false)
-
-  useEffect(() => {
-    fetch('/api/specials')
-      .then(res => res.json())
-      .then(data => setSpecials(data))
-      .catch(err => console.error('Failed to fetch specials', err))
-  }, [])
 
   const tabClasses = (selected: boolean) =>
     clsx(
@@ -85,7 +86,7 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
     const q = searchParams.get('tab')
     if (q && validTabs.includes(q as Tab)) {
       const pretty = q === 'operatives' ? basePath : `${basePath}/${q}`
-      router.replace(pretty, { scroll: false })
+      window.history.replaceState(null, '', pretty)
       return
     }
 
@@ -100,7 +101,8 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
   const handleTabChange = (newTab: Tab) => {
     setTab(newTab)
     const nextPath = newTab === 'operatives' ? basePath : `${basePath}/${newTab}`
-    router.replace(nextPath, { scroll: false })
+    // All panels are already on the page, so only the URL needs to change
+    window.history.replaceState(null, '', nextPath)
   }
 
   useEffect(() => {
@@ -313,7 +315,7 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
                 isOwner={false}
                 roster={null}
                 killteam={killteam}
-                allWeaponRules={allWeaponRules?.map((rule) => rule) ?? []}
+                allWeaponRules={allWeaponRules}
               />
             ))}
           </div>
@@ -352,11 +354,11 @@ export default function KillteamPageClient({ killteam }: { killteam: KillteamPla
         {/* Rosters/Spotlight */}
         <div key="rostersTab" className={tab === 'rosters' ? 'block' : 'hidden'}>
           <div className="gap-1 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {killteam.spotlightRosters?.map((roster) => {
+            {spotlightOpened && killteam.spotlightRosters?.map((roster) => {
               return (
-                <RosterSpotlightCard 
+                <RosterSpotlightCard
                   key={roster.rosterId}
-                  roster={roster}
+                  roster={{ ...roster, killteam }}
                 />
               )
             })}

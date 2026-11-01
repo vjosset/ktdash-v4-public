@@ -36,9 +36,13 @@ import OpponentTab from './OpponentTab'
 export default function RosterPageClient({
   initialRoster,
   isOwner,
+  allWeaponRules,
+  initialTab,
 }: {
   initialRoster: RosterPlain
   isOwner: boolean
+  allWeaponRules: WeaponRule[]
+  initialTab?: string
 }) {
   const router = useRouter()
   const { data: session, status } = useSession()
@@ -77,14 +81,10 @@ export default function RosterPageClient({
 
   const basePath = getBasePath(pathname)
 
-  const tabParam = searchParams.get('tab')
-  const initialTab = validTabs.includes(tabParam as Tab) ? (tabParam as Tab) : 'operatives'
-
-  const [tab, setTab] = useState<Tab>(initialTab)
+  const [tab, setTab] = useState<Tab>(validTabs.includes(initialTab as Tab) ? (initialTab as Tab) : 'operatives')
 
   const [ops, setOps] = useState<OpPlain[]>(initialRoster.ops ?? [])
   const [roster, setRoster] = useState(initialRoster)
-  const [allWeaponRules, setSpecials] = useState<WeaponRule[] | null>(null)
   const formRef = useRef<{ handleSubmit: () => void }>(null)
   const [showResetModal, setShowResetModal] = useState<Boolean>(false)
   const [showEditRosterModal, setShowEditRosterModal] = useState<Boolean>(false)
@@ -102,13 +102,6 @@ export default function RosterPageClient({
   // Get TacOps
   const tacOps = getSetting('tacOps') == '2024' ? TacOps2024 : TacOps
   const printTacOps = tacOps.filter((op) => roster?.killteam?.archetypes?.includes(op.archetype))
-
-  useEffect(() => {
-    fetch('/api/specials')
-      .then(res => res.json())
-      .then(data => setSpecials(data))
-      .catch(err => console.error('Failed to fetch specials', err))
-  }, [])
 
   useEffect(() => {
     setOps(roster.ops ?? [])
@@ -147,7 +140,8 @@ export default function RosterPageClient({
         ? basePath
         : `${basePath}/${newTab}`
 
-    router.replace(nextPath, { scroll: false })
+    // All panels are already on the page, so only the URL needs to change
+    window.history.replaceState(null, '', nextPath)
   }
 
   useEffect(() => {
@@ -155,7 +149,8 @@ export default function RosterPageClient({
     const q = searchParams.get('tab')
     if (q && validTabs.includes(q as Tab)) {
       const pretty = q === 'operatives' ? basePath : `${basePath}/${q}`
-      router.replace(pretty, { scroll: false })
+      window.history.replaceState(null, '', pretty)
+      return
     }
 
     // Also handle if user navigates to another pretty path (e.g., via browser back)
@@ -649,7 +644,7 @@ export default function RosterPageClient({
                       roster={roster}
                       killteam={roster.killteam ?? null}
                       isOwner={isOwner}
-                      allWeaponRules={allWeaponRules ?? []}
+                      allWeaponRules={allWeaponRules}
                       onOpUpdated={updateOp}
                       onOpDeleted={deleteOp}
                       onMoveUp={isOwner ? () => reorderOp(op.opId, 'up') : () => {}}
@@ -664,7 +659,7 @@ export default function RosterPageClient({
                   <AddOpForm
                     key="Add Operative"
                     roster={roster}
-                    allWeaponRules={allWeaponRules ?? []}
+                    allWeaponRules={allWeaponRules}
                     onOpAdded={addOp}
                   />
                 )}
@@ -684,7 +679,7 @@ export default function RosterPageClient({
                       roster={roster}
                       killteam={roster.killteam ?? null}
                       isOwner={isOwner}
-                      allWeaponRules={allWeaponRules ?? []}
+                      allWeaponRules={allWeaponRules}
                       onOpUpdated={updateOp}
                       onOpDeleted={deleteOp}
                       onMoveUp={isOwner ? () => reorderOp(op.opId, 'up') : () => {}}
@@ -728,7 +723,7 @@ export default function RosterPageClient({
             <div className={tab !== 'opponent' ? 'hidden' : 'print:hidden'}>
               <OpponentTab
                 myRosterId={roster.rosterId}
-                allWeaponRules={allWeaponRules ?? []}
+                allWeaponRules={allWeaponRules}
                 isActive={tab === 'opponent'}
               />
             </div>

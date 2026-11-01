@@ -5,16 +5,24 @@ import { authOptions } from '@/lib/auth'
 import { GAME } from '@/lib/config/game_config'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
 import { KillteamService } from '@/src/services'
+import { WeaponRuleService } from '@/src/services/weaponRule.service'
 import { getServerSession } from 'next-auth'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
+import { cache } from 'react'
 import KillteamPageClient from './KillteamPageClient'
+
+// generateMetadata and the page share one load per request
+const getKillteam = cache(async (killteamId: string) => {
+  const session = await getServerSession(authOptions)
+  return KillteamService.getKillteam(killteamId, { userId: session?.user?.userId })
+})
 
 export async function generateMetadata({ params }: { params: Promise<{ killteamId: string }>  }) {
   const { killteamId } = await params
-  const killteam = await KillteamService.getKillteam(killteamId)
-  
+  const killteam = await getKillteam(killteamId)
+
   if (!killteam) return {}
 
   const description =
@@ -32,10 +40,15 @@ export async function generateMetadata({ params }: { params: Promise<{ killteamI
   })
 }
 
-export default async function KillteamPage({ params }: { params: Promise<{ killteamId: string }> }) {
+export default async function KillteamPage({ params, searchParams }:
+  { params: Promise<{ killteamId: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }
+) {
   const { killteamId } = await params
-  const session = await getServerSession(authOptions)
-  const killteam = await KillteamService.getKillteam(killteamId, { userId: session?.user?.userId })
+  const { tab } = await searchParams
+  const [killteam, allWeaponRules] = await Promise.all([
+    getKillteam(killteamId),
+    WeaponRuleService.getAllWeaponRules(),
+  ])
 
   if (!killteam) notFound()
 
@@ -91,7 +104,11 @@ export default async function KillteamPage({ params }: { params: Promise<{ killt
       </div>
 
       <div className="px-1 py-8 max-w-7xl mx-auto">
-        <KillteamPageClient killteam={killteam.toPlain()} />
+        <KillteamPageClient
+          killteam={killteam.toPlain()}
+          allWeaponRules={allWeaponRules.map((rule) => rule.toPlain())}
+          initialTab={typeof tab === 'string' ? tab : undefined}
+        />
       </div>
     </div>
   )
