@@ -152,6 +152,11 @@ pm2 save
 
 # Using The API
 
+## If you use the KTDash API
+
+If you use the KTDash API in your own projects or apps, please disclose so clearly and prominently.
+This is a lot of work to maintain and update.
+
 ## Getting Killteams
 
 `https://ktdash.app/api/killteams`
