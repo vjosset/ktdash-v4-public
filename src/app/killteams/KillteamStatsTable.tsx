@@ -70,7 +70,17 @@ export default function KillteamStatsTable({
           return rateA === null ? 1 : -1
         }
 
-        return (ascending ? rateA - rateB : rateB - rateA) || a.killteamName.localeCompare(b.killteamName)
+        // Compare the percentages as displayed, so teams that read as tied are
+        // treated as tied. Ties then go to the larger sample - most battles
+        // first in either direction, since that's the more trustworthy rate
+        const percentA = Math.round(rateA * 100)
+        const percentB = Math.round(rateB * 100)
+        const battlesA = recordsByKillteam.get(a.killteamId)?.battles ?? 0
+        const battlesB = recordsByKillteam.get(b.killteamId)?.battles ?? 0
+
+        return (ascending ? percentA - percentB : percentB - percentA)
+          || (battlesB - battlesA)
+          || a.killteamName.localeCompare(b.killteamName)
       }
 
       // The record sorts by sample size - total battles - with wins breaking
