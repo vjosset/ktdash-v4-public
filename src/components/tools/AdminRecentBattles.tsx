@@ -71,8 +71,11 @@ export default function AdminRecentBattles({ battles }: { battles: BattlePlain[]
           {/* Stacked on narrow screens so the two sides never wrap into each
               other; side by side once there is room */}
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-x-4 gap-y-1 mt-0.5 text-sm">
-            {sidesFor(battle).map(side => (
-              <BattleSide key={side.mark + side.info.rosterName} info={side.info} mark={side.mark} />
+            {/* Always exactly two sides in a fixed order, so position is the identity -
+                mark + name collides on a draw between two same-named rosters
+                (e.g. two "Sample Roster"s) */}
+            {sidesFor(battle).map((side, idx) => (
+              <BattleSide key={idx} info={side.info} mark={side.mark} />
             ))}
           </div>
 

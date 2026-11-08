@@ -254,4 +254,9 @@ export class BattleService {
   static async deleteBattle(battleId: number): Promise<void> {
     await this.repository.deleteBattle(battleId)
   }
+
+  // Only meaningful to the roster's owner - the caller gates on that
+  static async countAwaitingRoster(rosterId: string): Promise<number> {
+    return await this.repository.countAwaitingRoster(rosterId)
+  }
 }

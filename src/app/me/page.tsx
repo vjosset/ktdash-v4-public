@@ -15,7 +15,7 @@ export async function generateMetadata() {
   return generateUserMetadata({ params: Promise.resolve({ userName }) })
 }
 
-export default async function MePage() {
+export default async function MePage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const userName = await getCurrentUserName()
-  return <UserPage params={Promise.resolve({ userName })} />
+  return <UserPage params={Promise.resolve({ userName })} searchParams={searchParams} />
 }

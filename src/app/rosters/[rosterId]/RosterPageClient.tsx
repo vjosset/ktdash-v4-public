@@ -1,5 +1,6 @@
 'use client'
 
+import RosterHelpContent from '@/components/help/RosterHelpContent'
 import AddOpForm from '@/components/op/AddOpForm'
 import OpCard from '@/components/op/OpCard'
 import BattlesTab from '@/components/roster/BattlesTab'
@@ -12,6 +13,7 @@ import { badgeClass, KillteamLink, UserLink } from '@/components/shared/Links'
 import { Button, Checkbox, Modal } from '@/components/ui'
 import CarouselModal, { CarouselItem } from '@/components/ui/CarouselModal'
 import Markdown from '@/components/ui/Markdown'
+import CountBadge from '@/components/ui/CountBadge'
 import PageTitle from '@/components/ui/PageTitle'
 import { GAME } from '@/lib/config/game_config'
 import { getSetting } from '@/lib/settings'
@@ -38,12 +40,17 @@ export default function RosterPageClient({
   isOwner,
   allWeaponRules,
   initialTab,
+  initialPendingBattleCount = 0,
 }: {
   initialRoster: RosterPlain
   isOwner: boolean
   allWeaponRules: WeaponRule[]
   initialTab?: string
+  // Battles awaiting this roster owner's confirmation, counted on the server so
+  // the tab badge shows before the Battles tab has ever loaded its list
+  initialPendingBattleCount?: number
 }) {
+  const [pendingBattleCount, setPendingBattleCount] = useState(initialPendingBattleCount)
   const router = useRouter()
   const { data: session, status } = useSession()
 
@@ -91,7 +98,22 @@ export default function RosterPageClient({
   const [carouselIsOpen, setCarouselIsOpen] = useState(false)
   const [carouselStartIndex, setCarouselStartIndex] = useState(0)
   const [showDeploymentModal, setShowDeploymentModal] = useState(false)
-  
+  const [showHelpModal, setShowHelpModal] = useState(false)
+
+  // Automatically show the Roster Help content the first time a user looks at one of their Rosters
+  // Maintain "seen" state in localStorage
+  useEffect(() => {
+    if (!isOwner) return
+    try {
+      if (!localStorage.getItem('ktdash.rosterHelpSeen')) {
+        setShowHelpModal(true)
+        localStorage.setItem('ktdash.rosterHelpSeen', '1')
+      }
+    } catch {
+      // Storage unavailable (private mode, blocked site data) - skip the auto-open
+    }
+  }, [isOwner])
+
   // For printing
   // Get operative unique abilities and options
   const { abilities: rosterAbilities, options: rosterOptions } = getRosterRepeatedAbilitiesAndOptions(roster ?? undefined)
@@ -232,6 +254,7 @@ export default function RosterPageClient({
     // Close any open dialogs so they don't end up in the printed output.
     // The Headless UI menu closes itself on item click, but that unmount only
     // happens on the next React commit - print after a paint so the DOM is clean.
+    setShowHelpModal(false)
     setShowResetModal(false)
     setShowEditRosterModal(false)
     setShowDeploymentModal(false)
@@ -553,6 +576,7 @@ export default function RosterPageClient({
                     isOwner={isOwner}
                     onEdit={handleEditRosterClick}
                     onPrint={handleRosterPrint}
+                    onHelp={() => setShowHelpModal(true)}
                   />
                 </Menu>
               </div>
@@ -591,6 +615,12 @@ export default function RosterPageClient({
               {battlesEnabled &&
                 <button className={tabClasses(tab === 'battles')} onClick={() => handleTabChange('battles')}>
                   Battles
+                  {isOwner && (
+                    <CountBadge
+                      count={pendingBattleCount}
+                      title={`${pendingBattleCount} battle${pendingBattleCount === 1 ? '' : 's'} awaiting your confirmation`}
+                    />
+                  )}
                 </button>
               }
               {isOwner &&
@@ -714,7 +744,12 @@ export default function RosterPageClient({
           {/* Battles */}
           {battlesEnabled && (
             <div className={tab === 'battles' ? 'block print:hidden' : 'hidden'}>
-              <BattlesTab roster={roster} isOwner={isOwner} isActive={tab === 'battles'} />
+              <BattlesTab
+                roster={roster}
+                isOwner={isOwner}
+                isActive={tab === 'battles'}
+                onPendingCountChange={setPendingBattleCount}
+              />
             </div>
           )}
 
@@ -825,6 +860,12 @@ export default function RosterPageClient({
           </div>
         </div>
         
+        {showHelpModal && (
+          <Modal title="Using Your Roster" onClose={() => setShowHelpModal(false)}>
+            <RosterHelpContent />
+          </Modal>
+        )}
+
         {showResetModal && (
           <Modal
             title="Reset Game"

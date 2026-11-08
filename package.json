@@ -9,6 +9,7 @@
   "scripts": {
     "seed": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/seed.ts",
     "dev": "PORT=7000 next dev",
+    "dev-win": "next dev --webpack -p 7000",
     "build": "next build",
     "build-turbo": "next build --turbo",
     "start": "PORT=7001 next start",

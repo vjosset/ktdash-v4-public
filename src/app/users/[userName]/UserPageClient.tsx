@@ -1,7 +1,9 @@
 'use client'
 
 import KillteamCard from '@/components/killteam/KillteamCard'
+import { isAwaitingUser } from '@/components/shared/BattleActions'
 import { Button } from '@/components/ui'
+import CountBadge from '@/components/ui/CountBadge'
 import UserBattlesTab from '@/components/user/UserBattlesTab'
 import AddRosterForm from '@/src/components/roster/AddRosterForm'
 import RosterCard from '@/src/components/roster/RosterCard'
@@ -30,6 +32,19 @@ export default function UserPageClient({ user, isOwner, battles }: UserPageClien
   // Sync local state when server data updates after refresh
   useEffect(() => { setRosters(user.rosters) }, [user.rosters])
 
+  // Battles are confirmed/removed from the Battles tab; held here so the tab
+  // badge below stays in step with the list
+  const [battleList, setBattleList] = useState(battles)
+  useEffect(() => { setBattleList(battles) }, [battles])
+
+  const handleBattleConfirmed = (updated: BattlePlain) =>
+    setBattleList(prev => prev.map(b => (b.battleId === updated.battleId ? updated : b)))
+  const handleBattleRemoved = (battleId: number) =>
+    setBattleList(prev => prev.filter(b => b.battleId !== battleId))
+
+  // Only battles this user can act on - ones they reported are waiting on someone else
+  const pendingBattleCount = isOwner ? battleList.filter(b => isAwaitingUser(b, user.userId)).length : 0
+
   const handleDelete = (rosterId: string) => {
     setRosters((currentRosters) => currentRosters?.filter((roster) => roster.rosterId !== rosterId))
   }
@@ -42,7 +57,9 @@ export default function UserPageClient({ user, isOwner, battles }: UserPageClien
   const isHomebrewTeam = (killteam: any) => ((killteam as any).isHomebrew ?? killteam.factionId === 'HBR')
   const userHomebrewKillteams = (user.killteams || []).filter(isHomebrewTeam)
   const hasHomebrew = userHomebrewKillteams.length > 0
-  const hasBattles = battles.length > 0
+  // Keep the tab while it is open, so removing the last battle leaves an empty
+  // list rather than a page with no tab content
+  const hasBattles = battleList.length > 0 || tab === 'battles'
   // The tab bar used to exist only for homebrew. With no homebrew and no
   // battles, every condition below reduces to exactly what it was before.
   const showTabs = hasHomebrew || hasBattles
@@ -150,6 +167,10 @@ export default function UserPageClient({ user, isOwner, battles }: UserPageClien
             {hasBattles && (
               <button className={tabClasses(tab === 'battles')} onClick={() => handleTabChange('battles')}>
                 Battles
+                <CountBadge
+                  count={pendingBattleCount}
+                  title={`${pendingBattleCount} battle${pendingBattleCount === 1 ? '' : 's'} awaiting your confirmation`}
+                />
               </button>
             )}
             {hasHomebrew && (
@@ -205,7 +226,13 @@ export default function UserPageClient({ user, isOwner, battles }: UserPageClien
 
       {hasBattles && (
         <div key="battlesTab" className={tab === 'battles' ? 'block' : 'hidden'}>
-          <UserBattlesTab battles={battles} userId={user.userId} />
+          <UserBattlesTab
+            battles={battleList}
+            userId={user.userId}
+            isOwner={isOwner}
+            onBattleConfirmed={handleBattleConfirmed}
+            onBattleRemoved={handleBattleRemoved}
+          />
         </div>
       )}
     </div>

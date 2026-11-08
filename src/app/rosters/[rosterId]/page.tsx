@@ -1,7 +1,7 @@
 import { getAuthSession } from '@/lib/auth'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
 import { getOpPortraitUrl, getRosterPortraitUrl, toEpochMs } from '@/lib/utils/imageUrls'
-import { RosterService } from '@/services'
+import { BattleService, RosterService } from '@/services'
 import { WeaponRuleService } from '@/services/weaponRule.service'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -72,6 +72,12 @@ export default async function RosterPage({ params, searchParams }:
     RosterService.incrementRosterViewCount(rosterId)
   }
 
+  // Seeds the Battles tab badge; the tab itself only loads battles when opened
+  const battlesEnabled = process.env.NEXT_PUBLIC_ENABLE_BATTLES === 'true'
+  const pendingBattleCount = isOwner && battlesEnabled
+    ? await BattleService.countAwaitingRoster(rosterId)
+    : 0
+
   return (
     <div className="mx-auto">
       <RosterPageClient
@@ -79,6 +85,7 @@ export default async function RosterPage({ params, searchParams }:
         isOwner={isOwner}
         allWeaponRules={allWeaponRules.map((rule) => rule.toPlain())}
         initialTab={typeof tab === 'string' ? tab : undefined}
+        initialPendingBattleCount={pendingBattleCount}
       />
     </div>
   )

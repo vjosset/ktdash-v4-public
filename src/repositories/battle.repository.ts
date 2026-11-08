@@ -222,6 +222,14 @@ export class BattleRepository extends BaseRepository {
     })
   }
 
+  // Battles reported against this roster that its owner has yet to confirm or dispute.
+  // Slot B is never the reporter, so this is exactly what the owner can act on.
+  async countAwaitingRoster(rosterId: string): Promise<number> {
+    return await this.prisma.battle.count({
+      where: { rosterBId: rosterId, rosterBConfirmed: false },
+    })
+  }
+
   /*
     The duplicate warning matches on the roster pair in either slot order - two
     different rosters is a different game.

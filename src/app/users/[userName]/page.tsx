@@ -1,3 +1,4 @@
+import HelpButton from '@/components/help/HelpButton'
 import PageTitle from '@/components/ui/PageTitle'
 import { GAME } from '@/lib/config/game_config'
 import { generatePageMetadata } from '@/lib/utils/generateMetadata'
@@ -46,8 +47,9 @@ export async function generateMetadata({ params }: { params: Promise<{ userName:
   })
 }
 
-export default async function UserPage({ params }: { params: Promise<{ userName: string }> }) {
+export default async function UserPage({ params, searchParams }: { params: Promise<{ userName: string }>, searchParams?: Promise<{ welcome?: string }> }) {
   const { userName } = await params
+  const { welcome } = (await searchParams) ?? {}
 
   const session = await getAuthSession()
 
@@ -66,10 +68,15 @@ export default async function UserPage({ params }: { params: Promise<{ userName:
 
   return (
     <div className="px-1 py-8 max-w-7xl mx-auto">
-      <div className="text-center mb-8">
+      <div className="text-center mb-8 relative">
         <PageTitle>
           {user.userName}
         </PageTitle>
+        {isOwner && (
+          <div className="absolute top-0 right-0 flex items-center gap-3">
+            <HelpButton autoOpen={welcome === '1'} />
+          </div>
+        )}
       </div>
       
       <UserPageClient 

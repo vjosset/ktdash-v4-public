@@ -68,7 +68,7 @@ export default function SignUpPage() {
       })
   
       if (result?.ok) {
-        router.push('/me')
+        router.push('/me?welcome=1')
       } else {
         setError('Sign in failed after registration.')
       }

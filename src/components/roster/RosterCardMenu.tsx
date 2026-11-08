@@ -6,7 +6,7 @@ import clsx from 'clsx'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
-import { FiChevronDown, FiChevronsDown, FiChevronsUp, FiChevronUp, FiCopy, FiEdit, FiPrinter, FiShare2, FiTrash } from 'react-icons/fi'
+import { FiChevronDown, FiChevronsDown, FiChevronsUp, FiChevronUp, FiCopy, FiEdit, FiHelpCircle, FiPrinter, FiShare2, FiTrash } from 'react-icons/fi'
 import { toast } from 'sonner'
 import Button from '../ui/Button'
 
@@ -19,7 +19,8 @@ export default function RosterCardMenu({
   onMoveFirst,
   onMoveDown,
   onMoveLast,
-  onPrint
+  onPrint,
+  onHelp,
 }: {
   roster: RosterPlain
   isOwner: boolean
@@ -30,6 +31,7 @@ export default function RosterCardMenu({
   onMoveDown?: () => void
   onMoveLast?: () => void
   onPrint?: () => void
+  onHelp?: () => void
 }) {
 
   const router = useRouter()
@@ -186,6 +188,17 @@ export default function RosterCardMenu({
                   onClick={onDelete}
                 >
                   <FiTrash /> Delete
+                </button>
+              )}
+            </MenuItem>
+          }
+          {onHelp &&
+            <MenuItem>
+              {({ focus }) => (
+                <button className={clsx('text-left text-sm w-full flex items-center gap-2', focus ? 'text-main' : 'text-foreground')}
+                  onClick={onHelp}
+                >
+                  <FiHelpCircle /> Help
                 </button>
               )}
             </MenuItem>

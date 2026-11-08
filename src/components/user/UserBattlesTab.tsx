@@ -1,5 +1,6 @@
 'use client'
 
+import { PendingBattleActions, RemoveBattleModal, useBattleActions } from '@/components/shared/BattleActions'
 import BattleRecord from '@/components/shared/BattleRecord'
 import { DeletedRosterBadge, RosterLink, UserLink } from '@/components/shared/Links'
 import { SectionTitle } from '@/components/ui'
@@ -38,14 +39,34 @@ function RosterSide({ side }: { side: BattleRosterInfo }) {
 }
 
 /*
-  Read-only. Confirming and disputing stay on each roster's own Battles tab,
-  which the roster links lead to.
+  Pending battles can be confirmed, disputed or withdrawn here as well as on each
+  roster's own Battles tab - the battle APIs authorise by user, not by roster.
 
   The server only sends unconfirmed battles to the profile's own user, so any
   pending row here is being viewed by that user - which is what makes the
-  "your" / "their" wording below safe.
+  "your" / "their" wording below safe. The buttons are still gated on isOwner.
+
+  The list itself is owned by the user page, so the Battles tab badge there
+  updates as battles are confirmed or removed.
 */
-export default function UserBattlesTab({ battles, userId }: { battles: BattlePlain[]; userId: string }) {
+export default function UserBattlesTab({
+  battles,
+  userId,
+  isOwner,
+  onBattleConfirmed,
+  onBattleRemoved,
+}: {
+  battles: BattlePlain[]
+  userId: string
+  isOwner: boolean
+  onBattleConfirmed: (updated: BattlePlain) => void
+  onBattleRemoved: (battleId: number) => void
+}) {
+  const { busyId, removing, setRemoving, confirm, remove } = useBattleActions({
+    onConfirmed: onBattleConfirmed,
+    onRemoved: onBattleRemoved,
+  })
+
   // Records count confirmed battles only, even on your own profile - the same
   // rule as the roster Battles tab, so the two always agree
   const record = battles.reduce(
@@ -109,11 +130,33 @@ export default function UserBattlesTab({ battles, userId }: { battles: BattlePla
                     </div>
                   )}
                 </div>
+
+                {isOwner && !battle.isConfirmed && (
+                  <PendingBattleActions
+                    awaitingMe={!isReporter}
+                    busy={busyId === battle.battleId}
+                    onConfirm={() => confirm(battle)}
+                    onRemove={() => setRemoving(battle)}
+                  />
+                )}
               </div>
             </li>
           )
         })}
       </ul>
+
+      {battles.length === 0 && (
+        <p className="text-muted text-center py-8">No battles recorded yet.</p>
+      )}
+
+      {removing && (
+        <RemoveBattleModal
+          isDispute={!perspectiveFor(removing, userId).isReporter}
+          busy={busyId === removing.battleId}
+          onCancel={() => setRemoving(null)}
+          onConfirm={() => remove(removing)}
+        />
+      )}
     </div>
   )
 }

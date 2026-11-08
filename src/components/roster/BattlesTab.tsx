@@ -1,5 +1,6 @@
 'use client'
 
+import { PendingBattleActions, RemoveBattleModal, useBattleActions } from '@/components/shared/BattleActions'
 import BattleRecord from '@/components/shared/BattleRecord'
 import { RosterLink, UserLink } from '@/components/shared/Links'
 import { Button, Input, Label, Modal, SectionTitle } from '@/components/ui'
@@ -8,7 +9,7 @@ import { parseRosterId, toLocalDateTime } from '@/lib/utils/utils'
 import { BattleOutcome, BattlePlain, BattleRosterInfo, RosterIdentity, RosterPlain } from '@/types'
 import clsx from 'clsx'
 import { useCallback, useEffect, useState } from 'react'
-import { FiCheck, FiEdit2, FiRefreshCw, FiTrash2 } from 'react-icons/fi'
+import { FiEdit2, FiRefreshCw } from 'react-icons/fi'
 import { toast } from 'sonner'
 
 type Outcome = 'W' | 'L' | 'D'
@@ -53,16 +54,28 @@ export default function BattlesTab({
   roster,
   isOwner,
   isActive,
+  onPendingCountChange,
 }: {
   roster: RosterPlain
   isOwner: boolean
   isActive: boolean
+  // Reports how many battles await this roster's owner, so the page's tab badge
+  // follows loads, confirms and disputes
+  onPendingCountChange?: (count: number) => void
 }) {
   const [battles, setBattles] = useState<BattlePlain[] | null>(null)
+
+  // Nothing to report until the list has loaded - the page keeps its server count until then
+  useEffect(() => {
+    if (battles === null || !onPendingCountChange) return
+    onPendingCountChange(battles.filter(b => !b.isConfirmed && !perspectiveFor(b, roster.rosterId).isReporter).length)
+  }, [battles, roster.rosterId, onPendingCountChange])
   const [loading, setLoading] = useState(false)
   const [showRecordModal, setShowRecordModal] = useState(false)
-  const [removing, setRemoving] = useState<BattlePlain | null>(null)
-  const [busyId, setBusyId] = useState<number | null>(null)
+  const { busyId, removing, setRemoving, confirm, remove } = useBattleActions({
+    onConfirmed: updated => setBattles(prev => (prev ?? []).map(b => (b.battleId === updated.battleId ? updated : b))),
+    onRemoved: battleId => setBattles(prev => (prev ?? []).filter(b => b.battleId !== battleId)),
+  })
   const loadBattles = useCallback(async () => {
     setLoading(true)
     try {
@@ -82,40 +95,6 @@ export default function BattlesTab({
     if (!isActive) return
     loadBattles()
   }, [isActive, loadBattles])
-
-  const handleConfirm = async (battle: BattlePlain) => {
-    setBusyId(battle.battleId)
-    try {
-      const res = await fetch(`/api/battles/${battle.battleId}/confirm`, { method: 'PATCH' })
-      if (!res.ok) throw new Error('Failed')
-      const updated: BattlePlain = await res.json()
-      setBattles(prev => (prev ?? []).map(b => (b.battleId === updated.battleId ? updated : b)))
-      toast.success('Battle confirmed')
-    } catch {
-      toast.error('Failed to confirm battle')
-    } finally {
-      setBusyId(null)
-    }
-  }
-
-  /*
-    Disputing (as the opponent) and withdrawing (as the reporter) are the same
-    operation on the data - only the wording differs.
-  */
-  const handleRemove = async (battle: BattlePlain) => {
-    setBusyId(battle.battleId)
-    try {
-      const res = await fetch(`/api/battles/${battle.battleId}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Failed')
-      setBattles(prev => (prev ?? []).filter(b => b.battleId !== battle.battleId))
-      toast.success('Battle removed')
-    } catch {
-      toast.error('Failed to remove battle')
-    } finally {
-      setBusyId(null)
-      setRemoving(null)
-    }
-  }
 
   // Rule 9: records count confirmed battles only
   const record = (battles ?? []).reduce(
@@ -149,17 +128,22 @@ export default function BattlesTab({
 
       {/* Refresh sits with the heading rather than the Record button - it acts on
           the list below it, not on the record above */}
-      <div className="flex items-center gap-2">
-        <SectionTitle>Battle History</SectionTitle>
+      {/* The whole heading is the refresh target - the icon alone is a small tap
+          on mobile. The button sits inside the h2 so it stays a heading.
+          Preflight resets text-transform on buttons, so inherit it back from the
+          h2 (which globals.css makes uppercase). */}
+      <SectionTitle>
         <button
           onClick={loadBattles}
-          className="text-muted hover:text-main transition-colors p-1"
+          disabled={loading}
+          className="group inline-flex items-center gap-2 text-left [text-transform:inherit]"
           title="Refresh"
-          aria-label="Refresh battles"
+          aria-label="Battle History - refresh"
         >
-          <FiRefreshCw className={clsx(loading && 'animate-spin')} />
+          Battle History
+          <FiRefreshCw className={clsx('text-muted group-hover:text-main transition-colors text-base', loading && 'animate-spin')} />
         </button>
-      </div>
+      </SectionTitle>
 
       {/* History - confirmed and pending in one list, newest first */}
       {battles === null ? (
@@ -210,36 +194,13 @@ export default function BattlesTab({
                     )}
                   </div>
 
-                  {/*
-                    Confirm and Dispute are weighted equally - disputing is not an
-                    accusation - so both are plain icon buttons, distinguished only
-                    by the hover colour. Only the trash is guarded by a modal:
-                    confirming is terminal under rule 5 but is also the agreeable
-                    outcome, whereas the trash destroys the row for both players.
-                  */}
                   {isOwner && !battle.isConfirmed && (
-                    <div className="flex items-center justify-end gap-1 flex-shrink-0">
-                      {awaitingMe && (
-                        <button
-                          onClick={() => handleConfirm(battle)}
-                          disabled={busy}
-                          className="text-muted hover:text-green-500 transition-colors p-1 disabled:opacity-40 disabled:hover:text-muted"
-                          title="Confirm"
-                          aria-label="Confirm battle"
-                        >
-                          <FiCheck />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setRemoving(battle)}
-                        disabled={busy}
-                        className="text-muted hover:text-red-500 transition-colors p-1 disabled:opacity-40 disabled:hover:text-muted"
-                        title={awaitingMe ? 'Dispute' : 'Withdraw'}
-                        aria-label={awaitingMe ? 'Dispute battle' : 'Withdraw battle'}
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </div>
+                    <PendingBattleActions
+                      awaitingMe={awaitingMe}
+                      busy={busy}
+                      onConfirm={() => confirm(battle)}
+                      onRemove={() => setRemoving(battle)}
+                    />
                   )}
                 </div>
               </li>
@@ -260,26 +221,12 @@ export default function BattlesTab({
       )}
 
       {removing && (
-        <Modal
-          title={removalIsDispute ? 'Dispute this battle?' : 'Withdraw this battle?'}
-          onClose={() => setRemoving(null)}
-          footer={
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setRemoving(null)}>
-                Cancel
-              </Button>
-              <Button onClick={() => handleRemove(removing)} disabled={busyId === removing.battleId}>
-                {removalIsDispute ? 'Dispute' : 'Withdraw'}
-              </Button>
-            </div>
-          }
-        >
-          <p className="text-sm">
-            {removalIsDispute
-              ? 'This removes the reported result. It will not count toward either record, and your opponent can report it again.'
-              : 'This removes the result you reported. It will not count toward either record.'}
-          </p>
-        </Modal>
+        <RemoveBattleModal
+          isDispute={removalIsDispute}
+          busy={busyId === removing.battleId}
+          onCancel={() => setRemoving(null)}
+          onConfirm={() => remove(removing)}
+        />
       )}
     </div>
   )
@@ -548,7 +495,7 @@ function RecordBattleModal({
 
         <p className="text-sm text-muted">
           Only one player records the battle. The other player confirms it from the Battles tab on
-          their own roster, and it counts toward both rosters once they do.
+          their own roster or profile, and it counts toward both rosters once they do.
         </p>
       </div>
     </Modal>
