@@ -4,6 +4,7 @@ import KillteamCard from '@/components/killteam/KillteamCard'
 import { isAwaitingUser } from '@/components/shared/BattleActions'
 import { Button } from '@/components/ui'
 import CountBadge from '@/components/ui/CountBadge'
+import Input from '@/components/ui/Input'
 import UserBattlesTab from '@/components/user/UserBattlesTab'
 import AddRosterForm from '@/src/components/roster/AddRosterForm'
 import RosterCard from '@/src/components/roster/RosterCard'
@@ -12,6 +13,9 @@ import clsx from 'clsx'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+
+// The roster search bar only appears once the list is long enough to need it
+const ROSTER_SEARCH_MIN_COUNT = 8
 
 interface UserPageClientProps {
   user: UserPlain
@@ -44,6 +48,22 @@ export default function UserPageClient({ user, isOwner, battles }: UserPageClien
 
   // Only battles this user can act on - ones they reported are waiting on someone else
   const pendingBattleCount = isOwner ? battleList.filter(b => isAwaitingUser(b, user.userId)).length : 0
+
+  const [rosterQuery, setRosterQuery] = useState('')
+  const normalizedQuery = rosterQuery.trim().toLowerCase()
+  const isSearching = normalizedQuery !== ''
+  // Based on the total, not the filtered count, and kept while a query is
+  // active so the bar never disappears with a filter still applied
+  const showRosterSearch = (rosters?.length ?? 0) > ROSTER_SEARCH_MIN_COUNT || rosterQuery !== ''
+
+  // Keep each roster's index in the full list - moveRoster works on that list
+  const visibleRosters = (rosters ?? [])
+    .map((roster, idx) => ({ roster, idx }))
+    .filter(({ roster }) =>
+      !isSearching ||
+      roster.rosterName?.toLowerCase().includes(normalizedQuery) ||
+      roster.killteam?.killteamName?.toLowerCase().includes(normalizedQuery)
+    )
 
   const handleDelete = (rosterId: string) => {
     setRosters((currentRosters) => currentRosters?.filter((roster) => roster.rosterId !== rosterId))
@@ -191,21 +211,46 @@ export default function UserPageClient({ user, isOwner, battles }: UserPageClien
             {!hasHomebrew && renderHomebrewButton()}
           </div>
         )}
-        <div className="gap-1 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {rosters?.map((roster, idx) => (
-            <RosterCard
-              key={roster.rosterId}
-              roster={roster}
-              isOwner={isOwner}
-              showUser={false}
-              showKillteam={true}
-              onMoveUp={isOwner ? () => moveRoster(idx, idx - 1) : () => {}}
-              onMoveDown={isOwner ? () => moveRoster(idx, idx + 1) : () => {}}
-              onMoveFirst={isOwner ? () => moveRoster(idx, 0) : () => {}}
-              onMoveLast={isOwner ? () => moveRoster(idx, rosters.length - 1) : () => {}}
-              onDelete={isOwner ? handleDelete : undefined}
+        {showRosterSearch && (
+          <div className="max-w-md mx-auto mb-4 px-2">
+            <Input
+              type="search"
+              placeholder="Search rosters or kill teams..."
+              aria-label="Search rosters"
+              value={rosterQuery}
+              onChange={(e) => setRosterQuery(e.target.value)}
+              className="my-0 px-2"
             />
-          ))}
+            {isSearching && (
+              <div className="text-xs text-muted mt-1 text-center">
+                Showing {visibleRosters.length} of {rosters?.length ?? 0}
+              </div>
+            )}
+          </div>
+        )}
+        {isSearching && visibleRosters.length === 0 && (
+          <div className="text-center text-muted text-sm">No rosters match &quot;{rosterQuery.trim()}&quot;</div>
+        )}
+        <div className="gap-1 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {visibleRosters.map(({ roster, idx }) => {
+            // Moving within a filtered list would jump over hidden rosters, so
+            // reordering is only offered on the full list
+            const canMove = isOwner && !isSearching
+            return (
+              <RosterCard
+                key={roster.rosterId}
+                roster={roster}
+                isOwner={isOwner}
+                showUser={false}
+                showKillteam={true}
+                onMoveUp={canMove ? () => moveRoster(idx, idx - 1) : undefined}
+                onMoveDown={canMove ? () => moveRoster(idx, idx + 1) : undefined}
+                onMoveFirst={canMove ? () => moveRoster(idx, 0) : undefined}
+                onMoveLast={canMove ? () => moveRoster(idx, (rosters?.length ?? 1) - 1) : undefined}
+                onDelete={isOwner ? handleDelete : undefined}
+              />
+            )
+          })}
         </div>
       </div>
 
