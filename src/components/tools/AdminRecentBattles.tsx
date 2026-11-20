@@ -52,10 +52,6 @@ function BattleSide({ info, mark }: Side) {
       }
       <span className="text-muted">by</span>
       <UserLink userName={info.userName} newTab={true} />
-      {/* A roster left at its default name is named after its killteam - don't say it twice */}
-      {info.killteamName !== info.rosterName && (
-        <span className="text-muted">({info.killteamName})</span>
-      )}
     </span>
   )
 }
