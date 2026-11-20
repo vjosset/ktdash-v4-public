@@ -758,6 +758,7 @@ export default function RosterPageClient({
             <div className={tab !== 'opponent' ? 'hidden' : 'print:hidden'}>
               <OpponentTab
                 myRosterId={roster.rosterId}
+                myUserId={roster.userId}
                 allWeaponRules={allWeaponRules}
                 isActive={tab === 'opponent'}
               />

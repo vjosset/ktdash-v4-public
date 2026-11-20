@@ -2,26 +2,25 @@
 
 import OpCard from '@/components/op/OpCard'
 import { KillteamLink, UserLink } from '@/components/shared/Links'
+import OpponentPicker from '@/components/shared/OpponentPicker'
 import { clearOpponentRosterId, getOpponentRosterId, setOpponentRosterId } from '@/lib/opponentRoster'
-import { parseRosterId } from '@/lib/utils/utils'
 import { WeaponRule } from '@/lib/utils/weaponRules'
 import { RosterPlain } from '@/types'
-import { FormEvent, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FiEdit2 } from 'react-icons/fi'
 
 interface OpponentTabProps {
   myRosterId: string
+  myUserId: string
   allWeaponRules: WeaponRule[]
   isActive: boolean
 }
 
-export default function OpponentTab({ myRosterId, allWeaponRules, isActive }: OpponentTabProps) {
+export default function OpponentTab({ myRosterId, myUserId, allWeaponRules, isActive }: OpponentTabProps) {
   const [opponentRosterId, setOpponentRosterIdState] = useState<string | null>(
     () => getOpponentRosterId(myRosterId)
   )
-  const [inputValue, setInputValue] = useState('')
   const [opponentRoster, setOpponentRoster] = useState<RosterPlain | null>(null)
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Keep a ref that's always current — checked inside the interval callback
@@ -59,23 +58,19 @@ export default function OpponentTab({ myRosterId, allWeaponRules, isActive }: Op
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opponentRosterId])
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    const id = parseRosterId(inputValue.trim())
-    if (!id) return
-    setLoading(true)
-    setError(null)
+  // Picked by ID, by player or from recents - the picker shows any error returned
+  const handlePick = async (id: string): Promise<string | null> => {
     try {
-      const res = await fetch(`/api/rosters/${id}`)
+      const res = await fetch(`/api/rosters/${encodeURIComponent(id)}`)
       if (!res.ok) throw new Error('Not found')
       const data: RosterPlain = await res.json()
-      setOpponentRosterId(myRosterId, id)
-      setOpponentRosterIdState(id)
+      setOpponentRosterId(myRosterId, data.rosterId)
+      setOpponentRosterIdState(data.rosterId)
       setOpponentRoster(data)
+      setError(null)
+      return null
     } catch {
-      setError('Roster not found. Check the ID and try again.')
-    } finally {
-      setLoading(false)
+      return 'Roster not found. Check the ID and try again.'
     }
   }
 
@@ -83,7 +78,6 @@ export default function OpponentTab({ myRosterId, allWeaponRules, isActive }: Op
     clearOpponentRosterId(myRosterId)
     setOpponentRosterIdState(null)
     setOpponentRoster(null)
-    setInputValue('')
     setError(null)
   }
 
@@ -101,31 +95,15 @@ export default function OpponentTab({ myRosterId, allWeaponRules, isActive }: Op
         {/* Divider */}
         <hr className="border-border" />
 
-        {/* Opponent input */}
-        <form onSubmit={handleSubmit} className="space-y-2">
+        {/* Opponent picker */}
+        <div className="space-y-2">
           <label htmlFor="opponentId" className="block text-sm font-medium">
-            Opponent Roster ID or URL
+            Opponent
           </label>
-          <div className="flex gap-2">
-            <input
-              id="opponentId"
-              type="text"
-              value={inputValue}
-              onChange={e => { setInputValue(e.target.value.toUpperCase()); setError(null) }}
-              placeholder="e.g. abc123 or https://ktdash.app/rosters/abc123"
-              className={`flex-1 min-w-0 rounded border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-main ${error ? 'border-destructive' : 'border-border'}`}
-              autoComplete="off"
-            />
-            <button
-              type="submit"
-              disabled={loading || !inputValue.trim()}
-              className="flex-shrink-0 rounded bg-main text-white px-4 py-2 text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
-            >
-              {loading ? 'Loading…' : 'Set'}
-            </button>
-          </div>
+          <OpponentPicker inputId="opponentId" myUserId={myUserId} onPick={handlePick} />
+          {/* A stored opponent that failed to load */}
           {error && <p className="text-sm text-destructive">{error}</p>}
-        </form>
+        </div>
       </div>
     )
   }

@@ -3,9 +3,10 @@
 import { PendingBattleActions, RemoveBattleModal, useBattleActions } from '@/components/shared/BattleActions'
 import BattleRecord from '@/components/shared/BattleRecord'
 import { RosterLink, UserLink } from '@/components/shared/Links'
-import { Button, Input, Label, Modal, SectionTitle } from '@/components/ui'
+import OpponentPicker from '@/components/shared/OpponentPicker'
+import { Button, Label, Modal, SectionTitle } from '@/components/ui'
 import { getOpponentRosterId } from '@/lib/opponentRoster'
-import { parseRosterId, toLocalDateTime } from '@/lib/utils/utils'
+import { toLocalDateTime } from '@/lib/utils/utils'
 import { BattleOutcome, BattlePlain, BattleRosterInfo, RosterIdentity, RosterPlain } from '@/types'
 import clsx from 'clsx'
 import { useCallback, useEffect, useState } from 'react'
@@ -273,10 +274,9 @@ function RecordBattleModal({
   onClose: () => void
   onCreated: (battle: BattlePlain) => void
 }) {
-  const [input, setInput] = useState('')
   const [opponent, setOpponent] = useState<RosterIdentity | null>(null)
   const [outcome, setOutcome] = useState<BattleOutcome | null>(null)
-  const [lookingUp, setLookingUp] = useState(false)
+  const [loadingCarriedOver, setLoadingCarriedOver] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
@@ -295,11 +295,11 @@ function RecordBattleModal({
     if (!storedId) return
 
     let cancelled = false
-    setLookingUp(true)
+    setLoadingCarriedOver(true)
 
     lookupOpponent(storedId, roster.rosterId, roster.userId).then(result => {
       if (cancelled) return
-      setLookingUp(false)
+      setLoadingCarriedOver(false)
       // A stored opponent that no longer resolves is not the user's problem
       // here: the form just opens empty, exactly as it did before
       if (!result.ok) return
@@ -318,22 +318,14 @@ function RecordBattleModal({
     setCarriedOver(false)
   }
 
-  const handleLookup = async () => {
-    const opponentRosterId = parseRosterId(input)
-    if (!opponentRosterId) return
-
-    setLookingUp(true)
-    setError(null)
-
+  // Picked by ID, by player or from recents - validated the same way either way
+  const handlePick = async (opponentRosterId: string): Promise<string | null> => {
     const result = await lookupOpponent(opponentRosterId, roster.rosterId, roster.userId)
-    setLookingUp(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
+    if (!result.ok) return result.error
 
     setOpponent(result.identity)
+    setCarriedOver(false)
+    return null
   }
 
   const handleSubmit = async (acknowledgeDuplicate: boolean) => {
@@ -423,9 +415,9 @@ function RecordBattleModal({
         </div>
 
         {/* Opponent */}
-        <div className="flex items-center justify-between gap-2">
-          <Label>Opponent Roster ID</Label>
-          {opponent ? (
+        {opponent ? (
+          <div className="flex items-center justify-between gap-2">
+            <Label>Opponent</Label>
             <div className="flex flex-wrap items-center gap-2 text-sm px-1">
               {opponent.rosterName} { ' ' }
               by
@@ -439,24 +431,15 @@ function RecordBattleModal({
                 <FiEdit2 size={14} />
               </button>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Input
-                value={input}
-                onChange={e => {
-                  setInput(e.target.value.toUpperCase())
-                  setError(null)
-                }}
-                onKeyDown={e => e.key === 'Enter' && handleLookup()}
-                placeholder="Roster ID or URL"
-                autoComplete="off"
-              />
-              <Button variant="ghost" onClick={handleLookup} disabled={lookingUp || !input.trim()}>
-                {lookingUp ? 'Finding…' : 'Find'}
-              </Button>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : loadingCarriedOver ? (
+          <p className="text-sm text-muted">Loading opponent…</p>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="recordBattleOpponent">Opponent</Label>
+            <OpponentPicker inputId="recordBattleOpponent" myUserId={roster.userId} onPick={handlePick} />
+          </div>
+        )}
 
         {opponent && carriedOver && (
           <p className="text-xs text-muted text-right">

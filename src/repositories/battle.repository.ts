@@ -136,6 +136,20 @@ export class BattleRepository extends BaseRepository {
   }
 
   /*
+    The user's newest battles, pending included, for working out who they have
+    played recently. Capped because only the first few distinct opponents are
+    ever shown.
+  */
+  async getLatestBattlesForUser(userId: string, take: number): Promise<BattleRow[]> {
+    return await this.prisma.battle.findMany({
+      where: { OR: [{ rosterA: { userId } }, { rosterB: { userId } }] },
+      include: battleInclude,
+      orderBy: { battleDate: 'desc' },
+      take,
+    })
+  }
+
+  /*
     Newest battles site-wide, for the admin view. Unconfirmed rows are included
     on purpose: a report stuck awaiting confirmation is exactly the thing an
     admin wants to see, and there is no roster whose owner's privacy to respect

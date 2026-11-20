@@ -26,7 +26,20 @@ export function KillteamLink({killteam, newTab}: {killteam: {killteamId : string
   )
 }
 
-export function UserLink({ userName, newTab }: {userName: string, newTab?: boolean}) {
+/*
+  With onClick the badge acts instead of navigating - same look, rendered as a
+  button - for places that pick a player rather than visit their profile.
+*/
+export function UserLink({ userName, newTab, onClick, disabled }: {userName: string, newTab?: boolean, onClick?: () => void, disabled?: boolean}) {
+  if (onClick) {
+    return (
+      <button type="button" className={`${badgeClass} disabled:opacity-50`} onClick={onClick} disabled={disabled}>
+        <FiUser />
+        {userName}
+      </button>
+    )
+  }
+
   return (
     <Link href={`/users/${userName}`} className={badgeClass} target={newTab ? '_blank' : ''}>
       <FiUser />
@@ -54,7 +67,17 @@ export function DeletedRosterBadge({ rosterName }: { rosterName: string }) {
   )
 }
 
-export function RosterLink({ rosterId, rosterName, toGallery, newTab }: { rosterId: string, rosterName: string, toGallery?: boolean, newTab?: boolean }) {
+// onClick works as on UserLink: same badge, rendered as a button that picks
+export function RosterLink({ rosterId, rosterName, toGallery, newTab, onClick, disabled }: { rosterId: string, rosterName: string, toGallery?: boolean, newTab?: boolean, onClick?: () => void, disabled?: boolean }) {
+  if (onClick) {
+    return (
+      <button type="button" className={`${badgeClass} disabled:opacity-50`} onClick={onClick} disabled={disabled}>
+        <FiUsers />
+        {rosterName}
+      </button>
+    )
+  }
+
   const link = toGallery
     ? `/rosters/${rosterId}/gallery`
     : `/rosters/${rosterId}`

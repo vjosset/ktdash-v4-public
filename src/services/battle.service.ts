@@ -1,7 +1,8 @@
 import { KillteamRepository } from '@/src/repositories/killteam.repository'
 import { BattleRepository, toBattle } from '@/src/repositories/battle.repository'
 import { RosterRepository } from '@/src/repositories/roster.repository'
-import { KillteamBattleRecord, KillteamBattleStats, KillteamMatchup, BATTLE_STATS_PERIOD, BattleOutcome, Battle, BattlePlain, BattleStatsPeriod, RosterIdentity } from '@/types'
+import { UserRepository } from '@/src/repositories/user.repository'
+import { KillteamBattleRecord, KillteamBattleStats, KillteamMatchup, BATTLE_STATS_PERIOD, BattleOutcome, Battle, BattlePlain, BattleRosterInfo, BattleStatsPeriod, RosterIdentity } from '@/types'
 
 /*
   Guards from the spec's rules 6 and 7. The cap is what prevents queue-flooding
@@ -17,6 +18,10 @@ const PERIOD_MONTHS: Record<BattleStatsPeriod, number | null> = {
 export const PENDING_REPORT_CAP = 3
 export const DUPLICATE_WARNING_HOURS = 12
 
+// How many distinct opponents to suggest, and how far back to look for them
+const RECENT_OPPONENT_LIMIT = 5
+const RECENT_OPPONENT_SCAN = 50
+
 export type CreateBattleOutcome =
   | { ok: true; battle: Battle }
   | { ok: false; status: number; error: string; duplicateOf?: BattlePlain }
@@ -25,6 +30,7 @@ export class BattleService {
   private static repository = new BattleRepository()
   private static rosterRepository = new RosterRepository()
   private static killteamRepository = new KillteamRepository()
+  private static userRepository = new UserRepository()
 
   static async getBattle(battleId: number): Promise<Battle | null> {
     const row = await this.repository.getBattle(battleId)
@@ -53,6 +59,33 @@ export class BattleService {
     const isSelf = !!viewerUserId && viewerUserId === userId
     const rows = await this.repository.getBattlesForUser(userId, isSelf)
     return rows.map(toBattle)
+  }
+
+  /*
+    The players this user has fought most recently, newest first: the opponent's
+    side of the latest battle with each one. Pending battles count too - you
+    played them either way. A side whose owner is gone has no userId and is
+    skipped, since there is nobody to pick.
+
+    A private player can't have their rosters listed by name, so the roster they
+    brought last time is all the picker can offer - one whose roster has since
+    been deleted is left out.
+  */
+  static async getRecentOpponents(userId: string, limit = RECENT_OPPONENT_LIMIT): Promise<BattleRosterInfo[]> {
+    const rows = await this.repository.getLatestBattlesForUser(userId, RECENT_OPPONENT_SCAN)
+
+    const opponents = new Map<string, BattleRosterInfo>()
+    for (const battle of rows.map(toBattle)) {
+      const opponent = battle.rosterA.userId === userId ? battle.rosterB : battle.rosterA
+      if (!opponent.userId || opponent.userId === userId || opponents.has(opponent.userId)) continue
+      opponents.set(opponent.userId, opponent)
+    }
+
+    const privateIds = await this.userRepository.getPrivateUserIds([...opponents.keys()])
+
+    return [...opponents.values()]
+      .filter(opponent => opponent.rosterId || !privateIds.has(opponent.userId!))
+      .slice(0, limit)
   }
 
   static async createBattle(params: {

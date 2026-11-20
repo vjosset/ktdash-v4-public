@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { UserRepository } from '@/src/repositories/user.repository'
 import { KillteamVoteService } from './killteamVote.service'
-import { User } from '@/types'
+import { RosterIdentity, User } from '@/types'
 
 export class UserService {
   private static repository = new UserRepository()
@@ -20,6 +20,11 @@ export class UserService {
   static async getAllUsers(): Promise<User[]> {
     const users = await this.repository.getAllUsers()
     return users.map(user => new User(user))
+  }
+
+  // Null for a missing or private player - private players are found by roster ID only
+  static async getRosterIdentitiesByUserName(userName: string): Promise<RosterIdentity[] | null> {
+    return await this.repository.getRosterIdentitiesByUserName(userName)
   }
 
   static async getUserByUsername(userName: string, options?: { viewerUserId?: string }): Promise<User | null> {
